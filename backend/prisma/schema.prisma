@@ -1,0 +1,22 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Filme {
+  id                   Int      @id @default(autoincrement())
+  titulo               String
+  sinopse              String
+  duracao              Int
+  classificacao        String
+  genero               String
+  dataInicialExibicao  DateTime
+  dataFinalExibicao    DateTime
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
