@@ -1,8 +1,633 @@
 {
-  "filmes": [],
-  "salas": [],
-  "sessoes": [],
-  "ingressos": [],
-  "lanches": [],
-  "pedidos": []
+  "usuarios": [
+    {
+      "id": "u1",
+      "nomeCompleto": "Marina Alves Rocha",
+      "email": "marina.rocha@eduplus.com",
+      "senhaHash": "senha123",
+      "dataCadastro": "2026-01-12",
+      "perfil": "Instrutor"
+    },
+    {
+      "id": "u2",
+      "nomeCompleto": "Rafael Nogueira Lima",
+      "email": "rafael.lima@eduplus.com",
+      "senhaHash": "senha123",
+      "dataCadastro": "2026-01-20",
+      "perfil": "Instrutor"
+    },
+    {
+      "id": "u3",
+      "nomeCompleto": "Carla Menezes Duarte",
+      "email": "carla.duarte@eduplus.com",
+      "senhaHash": "senha123",
+      "dataCadastro": "2026-02-03",
+      "perfil": "Instrutor"
+    },
+    {
+      "id": "u4",
+      "nomeCompleto": "Bruno Ferreira Santos",
+      "email": "bruno.santos@aluno.com",
+      "senhaHash": "senha123",
+      "dataCadastro": "2026-02-15",
+      "perfil": "Aluno"
+    },
+    {
+      "id": "u5",
+      "nomeCompleto": "Juliana Prado Martins",
+      "email": "juliana.martins@aluno.com",
+      "senhaHash": "senha123",
+      "dataCadastro": "2026-03-01",
+      "perfil": "Aluno"
+    },
+    {
+      "id": "u6",
+      "nomeCompleto": "Diego Almeida Costa",
+      "email": "diego.costa@aluno.com",
+      "senhaHash": "senha123",
+      "dataCadastro": "2026-03-18",
+      "perfil": "Aluno"
+    },
+    {
+      "id": "u7",
+      "nomeCompleto": "Patrícia Gomes Ribeiro",
+      "email": "patricia.ribeiro@aluno.com",
+      "senhaHash": "senha123",
+      "dataCadastro": "2026-04-05",
+      "perfil": "Aluno"
+    }
+  ],
+  "categorias": [
+    {
+      "id": "c1",
+      "nome": "Desenvolvimento Web",
+      "descricao": "Construção de aplicações para a web, do front-end ao back-end, com foco em frameworks modernos."
+    },
+    {
+      "id": "c2",
+      "nome": "Banco de Dados",
+      "descricao": "Modelagem, consultas e administração de bancos relacionais e não relacionais."
+    },
+    {
+      "id": "c3",
+      "nome": "Design e UX",
+      "descricao": "Interfaces, usabilidade e experiência do usuário aplicadas a produtos digitais."
+    },
+    {
+      "id": "c4",
+      "nome": "Ciência de Dados",
+      "descricao": "Análise de dados, estatística aplicada e introdução a aprendizado de máquina."
+    }
+  ],
+  "cursos": [
+    {
+      "id": "cur1",
+      "titulo": "React com TypeScript do Zero",
+      "descricao": "Componentes, hooks, rotas e consumo de APIs criando uma aplicação completa com React e TypeScript.",
+      "idInstrutor": "u1",
+      "idCategoria": "c1",
+      "nivel": "Iniciante",
+      "dataPublicacao": "2026-03-10",
+      "totalAulas": 6,
+      "totalHoras": 20
+    },
+    {
+      "id": "cur2",
+      "titulo": "APIs REST com Node.js",
+      "descricao": "Criação de APIs REST seguras e escaláveis, com autenticação, validação e documentação.",
+      "idInstrutor": "u2",
+      "idCategoria": "c1",
+      "nivel": "Intermediário",
+      "dataPublicacao": "2026-04-02",
+      "totalAulas": 4,
+      "totalHoras": 18
+    },
+    {
+      "id": "cur3",
+      "titulo": "SQL e Modelagem Relacional",
+      "descricao": "Da normalização às consultas avançadas, dominando o modelo relacional na prática.",
+      "idInstrutor": "u2",
+      "idCategoria": "c2",
+      "nivel": "Iniciante",
+      "dataPublicacao": "2026-02-20",
+      "totalAulas": 4,
+      "totalHoras": 16
+    },
+    {
+      "id": "cur4",
+      "titulo": "Design de Interfaces com Bootstrap",
+      "descricao": "Grid, componentes e responsividade para construir interfaces consistentes e acessíveis.",
+      "idInstrutor": "u3",
+      "idCategoria": "c3",
+      "nivel": "Iniciante",
+      "dataPublicacao": "2026-03-25",
+      "totalAulas": 3,
+      "totalHoras": 12
+    },
+    {
+      "id": "cur5",
+      "titulo": "Análise de Dados com Python",
+      "descricao": "Manipulação, limpeza e visualização de dados usando as principais bibliotecas do ecossistema Python.",
+      "idInstrutor": "u1",
+      "idCategoria": "c4",
+      "nivel": "Avançado",
+      "dataPublicacao": "2026-05-08",
+      "totalAulas": 3,
+      "totalHoras": 24
+    }
+  ],
+  "modulos": [
+    {
+      "id": "m1",
+      "idCurso": "cur1",
+      "titulo": "Fundamentos do React",
+      "ordem": 1
+    },
+    {
+      "id": "m2",
+      "idCurso": "cur1",
+      "titulo": "Rotas e Consumo de API",
+      "ordem": 2
+    },
+    {
+      "id": "m3",
+      "idCurso": "cur2",
+      "titulo": "Primeiros Endpoints",
+      "ordem": 1
+    },
+    {
+      "id": "m4",
+      "idCurso": "cur2",
+      "titulo": "Autenticação e Segurança",
+      "ordem": 2
+    },
+    {
+      "id": "m5",
+      "idCurso": "cur3",
+      "titulo": "Modelo Relacional",
+      "ordem": 1
+    },
+    {
+      "id": "m6",
+      "idCurso": "cur3",
+      "titulo": "Consultas com SQL",
+      "ordem": 2
+    },
+    {
+      "id": "m7",
+      "idCurso": "cur4",
+      "titulo": "Grid e Componentes",
+      "ordem": 1
+    },
+    {
+      "id": "m8",
+      "idCurso": "cur5",
+      "titulo": "Manipulação de Dados",
+      "ordem": 1
+    }
+  ],
+  "aulas": [
+    {
+      "id": "a1",
+      "idModulo": "m1",
+      "titulo": "Configurando o ambiente com Vite",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/react-vite",
+      "duracaoMinutos": 22,
+      "ordem": 1
+    },
+    {
+      "id": "a2",
+      "idModulo": "m1",
+      "titulo": "Componentes e props",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/react-componentes",
+      "duracaoMinutos": 35,
+      "ordem": 2
+    },
+    {
+      "id": "a3",
+      "idModulo": "m1",
+      "titulo": "Estado com useState",
+      "tipoConteudo": "Texto",
+      "urlConteudo": "https://eduplus.com/aulas/react-usestate",
+      "duracaoMinutos": 18,
+      "ordem": 3
+    },
+    {
+      "id": "a4",
+      "idModulo": "m2",
+      "titulo": "Navegação com React Router",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/react-router",
+      "duracaoMinutos": 40,
+      "ordem": 1
+    },
+    {
+      "id": "a5",
+      "idModulo": "m2",
+      "titulo": "Consumindo APIs com fetch",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/react-fetch",
+      "duracaoMinutos": 32,
+      "ordem": 2
+    },
+    {
+      "id": "a6",
+      "idModulo": "m2",
+      "titulo": "Quiz do módulo",
+      "tipoConteudo": "Quiz",
+      "urlConteudo": "https://eduplus.com/aulas/react-quiz",
+      "duracaoMinutos": 15,
+      "ordem": 3
+    },
+    {
+      "id": "a7",
+      "idModulo": "m3",
+      "titulo": "Estrutura de um projeto Node",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/node-estrutura",
+      "duracaoMinutos": 28,
+      "ordem": 1
+    },
+    {
+      "id": "a8",
+      "idModulo": "m3",
+      "titulo": "Rotas e controllers",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/node-rotas",
+      "duracaoMinutos": 45,
+      "ordem": 2
+    },
+    {
+      "id": "a9",
+      "idModulo": "m4",
+      "titulo": "Autenticação com JWT",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/node-jwt",
+      "duracaoMinutos": 50,
+      "ordem": 1
+    },
+    {
+      "id": "a10",
+      "idModulo": "m4",
+      "titulo": "Boas práticas de segurança",
+      "tipoConteudo": "Texto",
+      "urlConteudo": "https://eduplus.com/aulas/node-seguranca",
+      "duracaoMinutos": 25,
+      "ordem": 2
+    },
+    {
+      "id": "a11",
+      "idModulo": "m5",
+      "titulo": "Entidades e relacionamentos",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/sql-entidades",
+      "duracaoMinutos": 30,
+      "ordem": 1
+    },
+    {
+      "id": "a12",
+      "idModulo": "m5",
+      "titulo": "Normalização até a 3FN",
+      "tipoConteudo": "Texto",
+      "urlConteudo": "https://eduplus.com/aulas/sql-normalizacao",
+      "duracaoMinutos": 24,
+      "ordem": 2
+    },
+    {
+      "id": "a13",
+      "idModulo": "m6",
+      "titulo": "SELECT, JOIN e agregações",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/sql-joins",
+      "duracaoMinutos": 42,
+      "ordem": 1
+    },
+    {
+      "id": "a14",
+      "idModulo": "m6",
+      "titulo": "Exercícios práticos",
+      "tipoConteudo": "Quiz",
+      "urlConteudo": "https://eduplus.com/aulas/sql-exercicios",
+      "duracaoMinutos": 20,
+      "ordem": 2
+    },
+    {
+      "id": "a15",
+      "idModulo": "m7",
+      "titulo": "O sistema de grid do Bootstrap",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/bootstrap-grid",
+      "duracaoMinutos": 26,
+      "ordem": 1
+    },
+    {
+      "id": "a16",
+      "idModulo": "m7",
+      "titulo": "Cards, modais e tabelas",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/bootstrap-componentes",
+      "duracaoMinutos": 38,
+      "ordem": 2
+    },
+    {
+      "id": "a17",
+      "idModulo": "m7",
+      "titulo": "Layout responsivo na prática",
+      "tipoConteudo": "Texto",
+      "urlConteudo": "https://eduplus.com/aulas/bootstrap-responsivo",
+      "duracaoMinutos": 22,
+      "ordem": 3
+    },
+    {
+      "id": "a18",
+      "idModulo": "m8",
+      "titulo": "Leitura e limpeza de dados",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/python-limpeza",
+      "duracaoMinutos": 55,
+      "ordem": 1
+    },
+    {
+      "id": "a19",
+      "idModulo": "m8",
+      "titulo": "Visualização de resultados",
+      "tipoConteudo": "Vídeo",
+      "urlConteudo": "https://eduplus.com/aulas/python-visualizacao",
+      "duracaoMinutos": 48,
+      "ordem": 2
+    }
+  ],
+  "matriculas": [
+    {
+      "id": "mat1",
+      "idUsuario": "u4",
+      "idCurso": "cur1",
+      "dataMatricula": "2026-03-15",
+      "dataConclusao": "2026-05-20"
+    },
+    {
+      "id": "mat2",
+      "idUsuario": "u4",
+      "idCurso": "cur3",
+      "dataMatricula": "2026-04-01",
+      "dataConclusao": null
+    },
+    {
+      "id": "mat3",
+      "idUsuario": "u5",
+      "idCurso": "cur1",
+      "dataMatricula": "2026-03-20",
+      "dataConclusao": null
+    },
+    {
+      "id": "mat4",
+      "idUsuario": "u5",
+      "idCurso": "cur4",
+      "dataMatricula": "2026-04-10",
+      "dataConclusao": null
+    },
+    {
+      "id": "mat5",
+      "idUsuario": "u6",
+      "idCurso": "cur2",
+      "dataMatricula": "2026-05-02",
+      "dataConclusao": null
+    },
+    {
+      "id": "mat6",
+      "idUsuario": "u7",
+      "idCurso": "cur5",
+      "dataMatricula": "2026-06-11",
+      "dataConclusao": null
+    }
+  ],
+  "progressoAulas": [
+    {
+      "id": "p1",
+      "idUsuario": "u4",
+      "idAula": "a1",
+      "dataConclusao": "2026-03-16",
+      "status": "Concluído"
+    },
+    {
+      "id": "p2",
+      "idUsuario": "u4",
+      "idAula": "a2",
+      "dataConclusao": "2026-03-18",
+      "status": "Concluído"
+    },
+    {
+      "id": "p3",
+      "idUsuario": "u4",
+      "idAula": "a3",
+      "dataConclusao": "2026-03-22",
+      "status": "Concluído"
+    },
+    {
+      "id": "p4",
+      "idUsuario": "u4",
+      "idAula": "a4",
+      "dataConclusao": "2026-04-05",
+      "status": "Concluído"
+    },
+    {
+      "id": "p5",
+      "idUsuario": "u4",
+      "idAula": "a5",
+      "dataConclusao": "2026-05-10",
+      "status": "Concluído"
+    },
+    {
+      "id": "p6",
+      "idUsuario": "u4",
+      "idAula": "a6",
+      "dataConclusao": "2026-05-20",
+      "status": "Concluído"
+    },
+    {
+      "id": "p7",
+      "idUsuario": "u5",
+      "idAula": "a1",
+      "dataConclusao": "2026-03-25",
+      "status": "Concluído"
+    },
+    {
+      "id": "p8",
+      "idUsuario": "u5",
+      "idAula": "a2",
+      "dataConclusao": "2026-04-02",
+      "status": "Concluído"
+    },
+    {
+      "id": "p9",
+      "idUsuario": "u6",
+      "idAula": "a7",
+      "dataConclusao": "2026-05-05",
+      "status": "Concluído"
+    }
+  ],
+  "avaliacoes": [
+    {
+      "id": "av1",
+      "idUsuario": "u4",
+      "idCurso": "cur1",
+      "nota": 5,
+      "comentario": "Didática excelente e projeto final muito próximo do mercado.",
+      "dataAvaliacao": "2026-05-21"
+    },
+    {
+      "id": "av2",
+      "idUsuario": "u5",
+      "idCurso": "cur1",
+      "nota": 4,
+      "comentario": "Ótimo conteúdo, senti falta de mais exercícios sobre hooks.",
+      "dataAvaliacao": "2026-04-15"
+    },
+    {
+      "id": "av3",
+      "idUsuario": "u5",
+      "idCurso": "cur4",
+      "nota": 5,
+      "comentario": "Aprendi a montar layouts responsivos sem escrever CSS do zero.",
+      "dataAvaliacao": "2026-05-02"
+    },
+    {
+      "id": "av4",
+      "idUsuario": "u6",
+      "idCurso": "cur2",
+      "nota": 4,
+      "comentario": null,
+      "dataAvaliacao": "2026-06-01"
+    }
+  ],
+  "trilhas": [
+    {
+      "id": "t1",
+      "titulo": "Formação Full Stack",
+      "descricao": "Do front-end ao back-end: interfaces em React, APIs em Node e persistência em banco relacional.",
+      "idCategoria": "c1"
+    },
+    {
+      "id": "t2",
+      "titulo": "Dados na Prática",
+      "descricao": "Fundamentos de banco de dados seguidos de análise de dados aplicada.",
+      "idCategoria": "c2"
+    }
+  ],
+  "trilhasCursos": [
+    {
+      "id": "tc1",
+      "idTrilha": "t1",
+      "idCurso": "cur1",
+      "ordem": 1
+    },
+    {
+      "id": "tc2",
+      "idTrilha": "t1",
+      "idCurso": "cur2",
+      "ordem": 2
+    },
+    {
+      "id": "tc3",
+      "idTrilha": "t1",
+      "idCurso": "cur3",
+      "ordem": 3
+    },
+    {
+      "id": "tc4",
+      "idTrilha": "t2",
+      "idCurso": "cur3",
+      "ordem": 1
+    },
+    {
+      "id": "tc5",
+      "idTrilha": "t2",
+      "idCurso": "cur5",
+      "ordem": 2
+    }
+  ],
+  "certificados": [
+    {
+      "id": "cert1",
+      "idUsuario": "u4",
+      "idCurso": "cur1",
+      "idTrilha": null,
+      "codigoVerificacao": "CERT-9F3K-2XQ7",
+      "dataEmissao": "2026-05-20"
+    }
+  ],
+  "planos": [
+    {
+      "id": "pl1",
+      "nome": "Mensal",
+      "descricao": "Acesso a todo o catálogo de cursos com renovação mês a mês, sem fidelidade.",
+      "preco": 49.9,
+      "duracaoMeses": 1
+    },
+    {
+      "id": "pl2",
+      "nome": "Semestral",
+      "descricao": "Seis meses de acesso completo, com certificados ilimitados e suporte prioritário.",
+      "preco": 249.9,
+      "duracaoMeses": 6
+    },
+    {
+      "id": "pl3",
+      "nome": "Anual",
+      "descricao": "Doze meses de acesso completo, trilhas exclusivas e mentorias mensais com instrutores.",
+      "preco": 429.9,
+      "duracaoMeses": 12
+    }
+  ],
+  "assinaturas": [
+    {
+      "id": "as1",
+      "idUsuario": "u4",
+      "idPlano": "pl3",
+      "dataInicio": "2026-03-15",
+      "dataFim": "2027-03-15"
+    },
+    {
+      "id": "as2",
+      "idUsuario": "u5",
+      "idPlano": "pl2",
+      "dataInicio": "2026-03-20",
+      "dataFim": "2026-09-20"
+    },
+    {
+      "id": "as3",
+      "idUsuario": "u6",
+      "idPlano": "pl1",
+      "dataInicio": "2026-05-02",
+      "dataFim": "2026-06-02"
+    }
+  ],
+  "pagamentos": [
+    {
+      "id": "pg1",
+      "idAssinatura": "as1",
+      "valorPago": 429.9,
+      "dataPagamento": "2026-03-15",
+      "metodoPagamento": "Cartão de Crédito",
+      "idTransacaoGateway": "TRX-1773561600-A1B2C3"
+    },
+    {
+      "id": "pg2",
+      "idAssinatura": "as2",
+      "valorPago": 249.9,
+      "dataPagamento": "2026-03-20",
+      "metodoPagamento": "Pix",
+      "idTransacaoGateway": "TRX-1773993600-D4E5F6"
+    },
+    {
+      "id": "pg3",
+      "idAssinatura": "as3",
+      "valorPago": 49.9,
+      "dataPagamento": "2026-05-02",
+      "metodoPagamento": "Boleto",
+      "idTransacaoGateway": "TRX-1777680000-G7H8I9"
+    }
+  ]
 }

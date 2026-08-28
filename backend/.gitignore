@@ -26,5 +26,8 @@ npm-debug.log*
 # Environment variables
 .env
 
+# Banco de dados local
+dev.db
+
 # Prisma generated client
 /src/generated/prisma

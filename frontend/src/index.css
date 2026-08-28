@@ -1,1 +1,52 @@
+/* Ajustes pontuais sobre o tema Bootstrap (Bootswatch). */
 
+/* Os dropdowns da navbar são controlados pelo React, então o botão precisa
+   perder a aparência padrão de botão e se comportar como um nav-link. */
+.navbar .nav-link.btn-link {
+  text-decoration: none;
+  border: 0;
+  background: none;
+}
+
+/* Cards ganham uma leve elevação ao passar o cursor. */
+.card {
+  transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+/* O backdrop do modal customizado precisa ficar atrás do diálogo. */
+.modal-backdrop {
+  z-index: 1040;
+}
+
+.modal.show {
+  z-index: 1050;
+}
+
+/* Certificado */
+.letra-espacada {
+  letter-spacing: 0.2em;
+}
+
+.certificado {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Impressão: mantém apenas o certificado na folha. */
+@media print {
+  .navbar,
+  footer,
+  .d-print-none {
+    display: none !important;
+  }
+
+  .certificado {
+    border-width: 3px !important;
+    box-shadow: none !important;
+    max-width: 100%;
+  }
+}
