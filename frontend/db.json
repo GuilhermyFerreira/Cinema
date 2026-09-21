@@ -132,7 +132,7 @@
       "idCategoria": "c4",
       "nivel": "Avançado",
       "dataPublicacao": "2026-05-08",
-      "totalAulas": 3,
+      "totalAulas": 2,
       "totalHoras": 24
     }
   ],
@@ -602,6 +602,13 @@
       "idPlano": "pl1",
       "dataInicio": "2026-05-02",
       "dataFim": "2026-06-02"
+    },
+    {
+      "id": "7959",
+      "idUsuario": "u7",
+      "idPlano": "pl3",
+      "dataInicio": "2026-09-21",
+      "dataFim": "2027-09-21"
     }
   ],
   "pagamentos": [
@@ -628,6 +635,14 @@
       "dataPagamento": "2026-05-02",
       "metodoPagamento": "Boleto",
       "idTransacaoGateway": "TRX-1777680000-G7H8I9"
+    },
+    {
+      "id": "e63f",
+      "idAssinatura": "7959",
+      "valorPago": 429.9,
+      "dataPagamento": "2026-09-21",
+      "metodoPagamento": "Pix",
+      "idTransacaoGateway": "TRX-1790034542380-RVW9W3"
     }
   ]
 }
