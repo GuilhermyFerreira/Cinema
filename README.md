@@ -226,34 +226,85 @@ nunca cair em uma chave padrão embutida no código.
 
 ```
 backend/src/
-├── auth/
-│   ├── dto/login.dto.ts      # e-mail + senha, validados por class-validator
-│   ├── auth.controller.ts    # POST /auth/login (200, não 201)
-│   ├── auth.service.ts       # compara o hash com bcrypt e assina o JWT
-│   ├── auth.module.ts        # PassportModule + JwtModule (expira em 1h)
-│   └── jwt.strategy.ts       # extrai o Bearer Token e valida a assinatura
-├── usuarios/
-│   ├── dto/                  # create-usuario.dto.ts, update-usuario.dto.ts
-│   ├── usuarios.controller.ts# POST público; GET/PATCH/DELETE protegidos
-│   ├── usuarios.service.ts   # hash com bcrypt + findByEmail
-│   └── usuarios.module.ts    # exporta UsuariosService para o AuthModule
-└── prisma/                   # PrismaService / PrismaModule
+├── auth/                     # login JWT (dto, controller, service, module, jwt.strategy)
+├── comum/
+│   └── data-iso.decorator.ts # normaliza datas para ISO-8601 antes de validar
+├── prisma/
+│   ├── prisma.service.ts / prisma.module.ts
+│   └── prisma-exception.filter.ts  # traduz erros do Prisma em respostas HTTP
+├── usuarios/                 # POST público; demais rotas protegidas
+├── categorias/   cursos/     # Core
+├── modulos/      aulas/      # Conteúdo
+├── matriculas/   progresso-aulas/   avaliacoes/    # Interação
+├── trilhas/      trilhas-cursos/    certificados/  # Curadoria
+└── planos/       assinaturas/       pagamentos/    # Negócio
 ```
+
+Cada módulo segue o mesmo formato: `dto/create-*.dto.ts`, `dto/update-*.dto.ts`,
+`*.controller.ts`, `*.service.ts` e `*.module.ts`.
 
 ### Rotas
 
-| Método | Rota | Proteção |
-| --- | --- | --- |
-| `POST` | `/auth/login` | pública — devolve `access_token` |
-| `POST` | `/usuarios` | **pública** — permite o primeiro cadastro |
-| `GET` | `/usuarios` | exige `Bearer <token>` |
-| `GET` | `/usuarios/:id` | exige `Bearer <token>` |
-| `PATCH` | `/usuarios/:id` | exige `Bearer <token>` |
-| `DELETE` | `/usuarios/:id` | exige `Bearer <token>` |
+São 14 recursos, todos com CRUD completo (`POST`, `GET`, `GET /:id`, `PATCH /:id`,
+`DELETE /:id`), somando 72 rotas.
 
-O `AuthGuard('jwt')` é aplicado **por rota**, e não na classe: se fosse na classe, o
-`POST /usuarios` também ficaria protegido e ninguém conseguiria se cadastrar, já que
-criar o primeiro usuário exigiria um token que ainda não existe.
+| Recurso | Caminho | Proteção |
+| --- | --- | --- |
+| Login | `POST /auth/login` | pública — devolve `access_token` |
+| Usuários | `/usuarios` | `POST` **público**; restante exige token |
+| Categorias | `/categorias` | token |
+| Cursos | `/cursos` | token |
+| Módulos | `/modulos` | token |
+| Aulas | `/aulas` | token |
+| Matrículas | `/matriculas` | token |
+| Progresso de aulas | `/progresso-aulas` | token |
+| Avaliações | `/avaliacoes` | token |
+| Trilhas | `/trilhas` | token |
+| Trilhas × Cursos | `/trilhas-cursos` | token |
+| Certificados | `/certificados` | token |
+| Planos | `/planos` | token |
+| Assinaturas | `/assinaturas` | token |
+| Pagamentos | `/pagamentos` | token |
+
+O `AuthGuard('jwt')` é aplicado **por rota** em `/usuarios`, e não na classe: se fosse na
+classe, o `POST /usuarios` também ficaria protegido e ninguém conseguiria se cadastrar, já
+que criar o primeiro usuário exigiria um token que ainda não existe. Nos demais módulos o
+guard fica na classe, porque não existe esse problema de inicialização.
+
+### Chaves compostas
+
+`Progresso_Aulas` e `Trilhas_Cursos` têm chave primária composta, então as rotas pontuais
+recebem os dois identificadores:
+
+```
+GET    /progresso-aulas/:idUsuario/:idAula
+PATCH  /progresso-aulas/:idUsuario/:idAula
+DELETE /progresso-aulas/:idUsuario/:idAula
+
+GET    /trilhas-cursos/:idTrilha/:idCurso
+PATCH  /trilhas-cursos/:idTrilha/:idCurso
+DELETE /trilhas-cursos/:idTrilha/:idCurso
+```
+
+Nesses dois recursos o `PATCH` não aceita alterar os campos da chave — só o conteúdo
+(`status`/`dataConclusao` no progresso, `ordem` no vínculo da trilha).
+
+### Erros tratados
+
+Um filtro global converte os erros conhecidos do Prisma em respostas adequadas, em vez de
+devolver 500:
+
+| Situação | Código Prisma | Resposta |
+| --- | --- | --- |
+| Campo único repetido (e-mail, nome de categoria, código de certificado) | `P2002` | `409` com o nome do campo |
+| Chave estrangeira inexistente (ex.: `idCurso` que não existe) | `P2003` | `400` |
+| Registro ausente em `update`/`delete` | `P2025` | `404` |
+
+### Datas
+
+O Prisma recusa datas sem hora, mas `<input type="date">` envia exatamente `2026-03-10`.
+O decorator `@DataIso()` normaliza o valor para ISO-8601 completo antes da validação, então
+os dois formatos funcionam e uma data inválida devolve `400`, não `500`.
 
 ### Segurança das senhas
 

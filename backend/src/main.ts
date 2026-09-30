@@ -1,7 +1,8 @@
 import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { PrismaExceptionFilter } from './prisma/prisma-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,6 +12,11 @@ async function bootstrap() {
   // Ativa validação dos DTOs (LoginDto, CreateUsuarioDto, ...)
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
+  // Converte erros do Prisma (chave estrangeira, campo único) em respostas HTTP
+  app.useGlobalFilters(
+    new PrismaExceptionFilter(app.get(HttpAdapterHost).httpAdapter),
+  );
+
   const config = new DocumentBuilder()
     .setTitle('EduPlus API')
     .setDescription(
@@ -19,6 +25,19 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('auth')
     .addTag('usuarios')
+    .addTag('categorias')
+    .addTag('cursos')
+    .addTag('modulos')
+    .addTag('aulas')
+    .addTag('matriculas')
+    .addTag('progresso-aulas')
+    .addTag('avaliacoes')
+    .addTag('trilhas')
+    .addTag('trilhas-cursos')
+    .addTag('certificados')
+    .addTag('planos')
+    .addTag('assinaturas')
+    .addTag('pagamentos')
     .addBearerAuth(
       // Adiciona o campo de autenticação no Swagger
       {
