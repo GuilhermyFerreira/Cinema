@@ -190,12 +190,85 @@ npm run preview  # pré-visualiza o build de produção
 
 ---
 
-## 8. Pasta `backend/`
+## 8. Backend — API NestJS com autenticação JWT
 
-O diretório `backend/` contém uma API **NestJS + Prisma + PostgreSQL** de um laboratório
-anterior. O `prisma/schema.prisma` já foi reescrito com as 13 tabelas da plataforma de
-cursos, mas os módulos NestJS (`src/filmes/`) ainda são os do domínio antigo.
+O diretório `backend/` contém uma API **NestJS 11 + Prisma 7 + PostgreSQL** com
+autenticação **JWT**, documentada no Swagger.
 
-> ⚠️ O backend **não** é usado pelo site: o LAB03 pede consumo de API via **JSON Server**,
-> e é isso que o frontend faz. A API NestJS só voltará a compilar depois que os módulos
-> forem reescritos para as entidades novas e o cliente Prisma for regerado.
+> O backend é independente do site: o LAB03 pede consumo de API via **JSON Server**, e é
+> isso que o frontend faz. A API NestJS é exercitada pelo Swagger.
+
+### Como rodar
+
+Pré-requisito: PostgreSQL em `localhost:5432` com o banco `projetocinema`.
+
+```bash
+cd backend
+npm install
+cp .env.example .env     # preencha DATABASE_URL e JWT_SECRET
+npx prisma migrate deploy
+npx prisma generate
+npm run start:dev        # http://localhost:3000/api
+```
+
+O `.env` precisa das duas variáveis (o arquivo é ignorado pelo Git):
+
+```
+DATABASE_URL="postgresql://usuario:senha@localhost:5432/projetocinema?schema=public"
+JWT_SECRET="uma-chave-longa-e-aleatoria"
+```
+
+Gere uma chave com `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`.
+Se `JWT_SECRET` não estiver definida, a aplicação falha ao iniciar — de propósito, para
+nunca cair em uma chave padrão embutida no código.
+
+### Estrutura
+
+```
+backend/src/
+├── auth/
+│   ├── dto/login.dto.ts      # e-mail + senha, validados por class-validator
+│   ├── auth.controller.ts    # POST /auth/login (200, não 201)
+│   ├── auth.service.ts       # compara o hash com bcrypt e assina o JWT
+│   ├── auth.module.ts        # PassportModule + JwtModule (expira em 1h)
+│   └── jwt.strategy.ts       # extrai o Bearer Token e valida a assinatura
+├── usuarios/
+│   ├── dto/                  # create-usuario.dto.ts, update-usuario.dto.ts
+│   ├── usuarios.controller.ts# POST público; GET/PATCH/DELETE protegidos
+│   ├── usuarios.service.ts   # hash com bcrypt + findByEmail
+│   └── usuarios.module.ts    # exporta UsuariosService para o AuthModule
+└── prisma/                   # PrismaService / PrismaModule
+```
+
+### Rotas
+
+| Método | Rota | Proteção |
+| --- | --- | --- |
+| `POST` | `/auth/login` | pública — devolve `access_token` |
+| `POST` | `/usuarios` | **pública** — permite o primeiro cadastro |
+| `GET` | `/usuarios` | exige `Bearer <token>` |
+| `GET` | `/usuarios/:id` | exige `Bearer <token>` |
+| `PATCH` | `/usuarios/:id` | exige `Bearer <token>` |
+| `DELETE` | `/usuarios/:id` | exige `Bearer <token>` |
+
+O `AuthGuard('jwt')` é aplicado **por rota**, e não na classe: se fosse na classe, o
+`POST /usuarios` também ficaria protegido e ninguém conseguiria se cadastrar, já que
+criar o primeiro usuário exigiria um token que ainda não existe.
+
+### Segurança das senhas
+
+A senha chega em texto puro no DTO (campo `senha`), é convertida em hash com **bcrypt**
+e gravada na coluna `SenhaHash`. Nenhuma resposta da API devolve o hash: as consultas de
+leitura usam `omit: { senhaHash: true }`. A única exceção é o `findByEmail`, usado
+internamente pelo `AuthService` para comparar a senha no login.
+
+O login responde a mesma mensagem (`E-mail ou senha incorretos`) tanto para e-mail
+inexistente quanto para senha errada, para não revelar quais e-mails estão cadastrados.
+
+### Como testar no Swagger
+
+1. Suba a API e acesse **http://localhost:3000/api**.
+2. **Registrar:** `POST /usuarios` (rota pública; a senha é criptografada automaticamente).
+3. **Login:** `POST /auth/login` com o mesmo e-mail e senha. Copie o `access_token`.
+4. **Autorizar:** clique em **Authorize** no topo, cole o token e confirme.
+5. **Acessar:** `GET /usuarios` agora responde 200. Sem o token, responde 401.

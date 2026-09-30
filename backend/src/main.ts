@@ -1,25 +1,42 @@
-import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors();
+
+  // Ativa validação dos DTOs (LoginDto, CreateUsuarioDto, ...)
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   const config = new DocumentBuilder()
-    .setTitle('Cinema API')
-    .setDescription('Documentação da API do Cinema (NestJS + Prisma)')
+    .setTitle('EduPlus API')
+    .setDescription(
+      'Documentação da API da Plataforma de Cursos Online (NestJS, Prisma e JWT)',
+    )
     .setVersion('1.0')
-    .addTag('filmes')
+    .addTag('auth')
+    .addTag('usuarios')
+    .addBearerAuth(
+      // Adiciona o campo de autenticação no Swagger
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        in: 'header',
+      },
+      'token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(`Application is running on: http://localhost:${process.env.PORT ?? 3000}/api`);
+  const porta = process.env.PORT ?? 3000;
+  await app.listen(porta);
+  console.log(`Aplicação rodando em: http://localhost:${porta}/api`);
 }
-bootstrap();
+void bootstrap();
