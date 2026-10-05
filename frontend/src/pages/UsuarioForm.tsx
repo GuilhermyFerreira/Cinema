@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usuarioService } from '../services';
-import { usuarioSchema, PERFIS } from '../models';
+import { usuarioSchema, usuarioEdicaoSchema, PAPEIS, type Papel } from '../models';
 import { Cabecalho } from '../components/UI/Cabecalho';
 import { Carregando } from '../components/UI/Carregando';
 import { Alerta } from '../components/UI/Alerta';
@@ -9,23 +9,31 @@ import { Botao } from '../components/UI/Botao';
 import { CampoTexto } from '../components/Formulario/CampoTexto';
 import { CampoSelect } from '../components/Formulario/CampoSelect';
 import { extrairErros } from '../utils/validacao';
-import { hojeInputData, paraInputData } from '../utils/formatadores';
 
 const FORMULARIO_VAZIO = {
   nomeCompleto: '',
   email: '',
-  senhaHash: '',
-  dataCadastro: hojeInputData(),
-  perfil: 'Aluno',
+  senha: '',
 };
 
-/** Cadastro e edição de usuários (tabela Usuarios). */
+/**
+ * Cadastro e edição de usuários.
+ *
+ * A senha nunca volta da API — só o hash fica no banco. Por isso, na edição o
+ * campo começa vazio e só é enviado quando preenchido.
+ *
+ * O papel também não trafega junto do cadastro: ele tem uma rota própria
+ * (`PATCH /usuarios/:id/papel`), porque o autocadastro é público e aceitar o
+ * papel ali permitiria que qualquer visitante criasse um administrador.
+ */
 export function UsuarioForm() {
   const navegar = useNavigate();
   const { id } = useParams<{ id: string }>();
   const modoEdicao = Boolean(id);
 
   const [dados, setDados] = useState(FORMULARIO_VAZIO);
+  const [papel, setPapel] = useState<Papel>('Aluno');
+  const [papelOriginal, setPapelOriginal] = useState<Papel>('Aluno');
   const [erros, setErros] = useState<Record<string, string>>({});
   const [carregando, setCarregando] = useState(modoEdicao);
   const [salvando, setSalvando] = useState(false);
@@ -40,10 +48,10 @@ export function UsuarioForm() {
         setDados({
           nomeCompleto: usuario.nomeCompleto,
           email: usuario.email,
-          senhaHash: usuario.senhaHash,
-          dataCadastro: paraInputData(usuario.dataCadastro),
-          perfil: usuario.perfil,
+          senha: '',
         });
+        setPapel(usuario.papel);
+        setPapelOriginal(usuario.papel);
       } catch (erro) {
         console.error('Erro ao carregar usuário:', erro);
         setErroGeral('Não foi possível carregar o usuário para edição.');
@@ -54,9 +62,7 @@ export function UsuarioForm() {
   }, [modoEdicao, id]);
 
   function aoMudar(
-    evento: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    evento: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) {
     const { name, value } = evento.target;
     setDados((anterior) => ({ ...anterior, [name]: value }));
@@ -65,23 +71,34 @@ export function UsuarioForm() {
   async function aoEnviar(evento: React.FormEvent) {
     evento.preventDefault();
     setErroGeral('');
+    setErros({});
     setSalvando(true);
 
     try {
-      const validado = usuarioSchema.parse(dados);
+      const esquema = modoEdicao ? usuarioEdicaoSchema : usuarioSchema;
+      const validado = esquema.parse(dados);
 
-      // Email é um campo Unique no modelo de dados.
-      const disponivel = await usuarioService.emailDisponivel(validado.email, id);
+      const disponivel = await usuarioService.emailDisponivel(
+        validado.email,
+        id,
+      );
       if (!disponivel) {
         setErros({ email: 'Este e-mail já está cadastrado.' });
         return;
       }
 
       if (modoEdicao && id) {
-        await usuarioService.atualizar(id, validado);
+        // Senha em branco significa "manter a atual".
+        const { senha, ...resto } = validado;
+        await usuarioService.atualizar(id, senha ? { ...resto, senha } : resto);
+
+        if (papel !== papelOriginal) {
+          await usuarioService.alterarPapel(id, papel);
+        }
       } else {
-        await usuarioService.criar(validado);
+        await usuarioService.criar({ ...validado, papel: 'Aluno' });
       }
+
       navegar('/usuarios');
     } catch (erro) {
       const errosCampos = extrairErros(erro);
@@ -102,7 +119,7 @@ export function UsuarioForm() {
     <div>
       <Cabecalho
         titulo={modoEdicao ? 'Editar usuário' : 'Novo usuário'}
-        descricao="Dados de acesso e identificação na plataforma."
+        descricao="Dados de acesso e nível de permissão na plataforma."
         icone="bi-person-plus"
       />
 
@@ -112,7 +129,7 @@ export function UsuarioForm() {
         <div className="card-body">
           <form onSubmit={aoEnviar} className="row g-3" noValidate>
             <CampoTexto
-              className="col-md-8"
+              className={modoEdicao ? 'col-md-8' : 'col-12'}
               label="Nome completo"
               name="nomeCompleto"
               value={dados.nomeCompleto}
@@ -121,16 +138,17 @@ export function UsuarioForm() {
               placeholder="Ex.: Ana Beatriz Souza"
             />
 
-            <CampoSelect
-              className="col-md-4"
-              label="Perfil"
-              name="perfil"
-              value={dados.perfil}
-              onChange={aoMudar}
-              erro={erros.perfil}
-              opcoes={PERFIS.map((perfil) => ({ label: perfil, value: perfil }))}
-              ajuda="Instrutores podem ser vinculados a cursos."
-            />
+            {modoEdicao && (
+              <CampoSelect
+                className="col-md-4"
+                label="Papel"
+                name="papel"
+                value={papel}
+                onChange={(evento) => setPapel(evento.target.value as Papel)}
+                opcoes={PAPEIS.map((p) => ({ label: p, value: p }))}
+                ajuda="Admin administra o catálogo; Aluno se matricula e assina."
+              />
+            )}
 
             <CampoTexto
               className="col-md-6"
@@ -146,24 +164,27 @@ export function UsuarioForm() {
 
             <CampoTexto
               className="col-md-6"
-              label="Senha"
-              name="senhaHash"
+              label={modoEdicao ? 'Nova senha' : 'Senha'}
+              name="senha"
               type="password"
-              value={dados.senhaHash}
+              value={dados.senha}
               onChange={aoMudar}
-              erro={erros.senhaHash}
-              ajuda="Mínimo de 6 caracteres."
+              erro={erros.senha}
+              ajuda={
+                modoEdicao
+                  ? 'Deixe em branco para manter a senha atual.'
+                  : 'Mínimo de 6 caracteres.'
+              }
             />
 
-            <CampoTexto
-              className="col-md-6"
-              label="Data de cadastro"
-              name="dataCadastro"
-              type="date"
-              value={dados.dataCadastro}
-              onChange={aoMudar}
-              erro={erros.dataCadastro}
-            />
+            {!modoEdicao && (
+              <div className="col-12">
+                <Alerta tipo="info">
+                  Todo usuário novo entra como <strong>Aluno</strong>. Para
+                  promover a administrador, edite-o depois de criado.
+                </Alerta>
+              </div>
+            )}
 
             <div className="col-12 d-flex gap-2 pt-3 border-top">
               <Botao

@@ -3,7 +3,7 @@ import type { IPlano } from '../models';
 
 class PlanoService extends CrudService<IPlano> {
   constructor() {
-    super('planos');
+    super('planos', 'idPlano');
   }
 
   /** Planos ordenados do mais barato para o mais caro (vitrine do checkout). */

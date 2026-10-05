@@ -5,11 +5,14 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Query,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Papeis } from '../auth/papeis.decorator';
+import { PapeisGuard } from '../auth/papeis.guard';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -20,14 +23,15 @@ import { CategoriasService } from './categorias.service';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
 
-// Todas as rotas exigem token JWT.
+// Leitura é pública (vitrine do site); criar, editar e remover exige Admin.
 @ApiTags('categorias')
-@ApiBearerAuth('token')
-@UseGuards(AuthGuard('jwt'))
 @Controller('categorias')
 export class CategoriasController {
   constructor(private readonly categoriasService: CategoriasService) {}
 
+  @ApiBearerAuth('token')
+  @UseGuards(AuthGuard('jwt'), PapeisGuard)
+  @Papeis('Admin')
   @Post()
   @ApiOperation({ summary: 'Criar uma categoria' })
   @ApiResponse({ status: 201, description: 'Categoria criada com sucesso.' })
@@ -36,6 +40,7 @@ export class CategoriasController {
     description: 'Dados inválidos ou referência inexistente.',
   })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  @ApiResponse({ status: 403, description: 'Exige papel Admin.' })
   create(@Body() createCategoriaDto: CreateCategoriaDto) {
     return this.categoriasService.create(createCategoriaDto);
   }
@@ -43,8 +48,8 @@ export class CategoriasController {
   @Get()
   @ApiOperation({ summary: 'Listar categorias' })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
-  findAll() {
-    return this.categoriasService.findAll();
+  findAll(@Query() filtro: Record<string, string>) {
+    return this.categoriasService.findAll(filtro);
   }
 
   @Get(':id')
@@ -54,6 +59,9 @@ export class CategoriasController {
     return this.categoriasService.findOne(id);
   }
 
+  @ApiBearerAuth('token')
+  @UseGuards(AuthGuard('jwt'), PapeisGuard)
+  @Papeis('Admin')
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar uma categoria' })
   @ApiResponse({ status: 404, description: 'Categoria não encontrada.' })
@@ -64,6 +72,9 @@ export class CategoriasController {
     return this.categoriasService.update(id, updateCategoriaDto);
   }
 
+  @ApiBearerAuth('token')
+  @UseGuards(AuthGuard('jwt'), PapeisGuard)
+  @Papeis('Admin')
   @Delete(':id')
   @ApiOperation({ summary: 'Remover uma categoria' })
   @ApiResponse({ status: 404, description: 'Categoria não encontrada.' })

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { montarWhere } from '../comum/filtros';
 import { CreateCertificadoDto } from './dto/create-certificado.dto';
 import { UpdateCertificadoDto } from './dto/update-certificado.dto';
 
@@ -11,8 +12,14 @@ export class CertificadosService {
     return this.prisma.certificado.create({ data: createCertificadoDto });
   }
 
-  findAll() {
+  /** Campos aceitos como filtro: idUsuario, idCurso, idTrilha, codigoVerificacao. */
+  findAll(filtro: Record<string, unknown> = {}) {
     return this.prisma.certificado.findMany({
+      where: montarWhere(
+        filtro,
+        ['idUsuario', 'idCurso', 'idTrilha'],
+        ['codigoVerificacao'],
+      ),
       orderBy: { idCertificado: 'asc' },
     });
   }

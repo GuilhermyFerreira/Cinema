@@ -11,3 +11,4 @@ export * from './certificado.model';
 export * from './plano.model';
 export * from './assinatura.model';
 export * from './pagamento.model';
+export * from './auth.model';

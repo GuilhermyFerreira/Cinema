@@ -9,6 +9,7 @@ import { Selo } from '../components/UI/Selo';
 import { Modal } from '../components/UI/Modal';
 import { Botao } from '../components/UI/Botao';
 import { Alerta } from '../components/UI/Alerta';
+import { useAutenticacao } from '../hooks/useAutenticacao';
 
 interface CategoriaComTotais extends ICategoria {
   totalCursos: number;
@@ -21,6 +22,7 @@ export function Categorias() {
   const [carregando, setCarregando] = useState(true);
   const [paraExcluir, setParaExcluir] = useState<CategoriaComTotais | null>(null);
   const [aviso, setAviso] = useState('');
+  const { ehAdmin } = useAutenticacao();
 
   useEffect(() => {
     carregarCategorias();
@@ -80,8 +82,8 @@ export function Categorias() {
         titulo="Categorias"
         descricao="Agrupam cursos e trilhas por área de conhecimento."
         icone="bi-tags"
-        textoBotao="Nova categoria"
-        linkBotao="/categorias/novo"
+        textoBotao={ehAdmin ? 'Nova categoria' : undefined}
+        linkBotao={ehAdmin ? '/categorias/novo' : undefined}
       />
 
       {aviso && (
@@ -134,21 +136,25 @@ export function Categorias() {
                     >
                       <i className="bi bi-list-ul me-1"></i>Ver cursos
                     </Link>
-                    <Link
-                      to={`/categorias/editar/${categoria.id}`}
-                      className="btn btn-outline-secondary btn-sm"
-                      aria-label={`Editar ${categoria.nome}`}
-                    >
-                      <i className="bi bi-pencil"></i>
-                    </Link>
-                    <button
-                      type="button"
-                      className="btn btn-outline-danger btn-sm"
-                      aria-label={`Excluir ${categoria.nome}`}
-                      onClick={() => solicitarExclusao(categoria)}
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
+                    {ehAdmin && (
+                      <>
+                        <Link
+                          to={`/categorias/editar/${categoria.id}`}
+                          className="btn btn-outline-secondary btn-sm"
+                          aria-label={`Editar ${categoria.nome}`}
+                        >
+                          <i className="bi bi-pencil"></i>
+                        </Link>
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger btn-sm"
+                          aria-label={`Excluir ${categoria.nome}`}
+                          onClick={() => solicitarExclusao(categoria)}
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

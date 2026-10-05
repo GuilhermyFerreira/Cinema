@@ -1,9 +1,14 @@
-import { CrudService } from './http.service';
+import { CrudCompostoService } from './http.service';
 import type { IProgressoAula, StatusProgresso } from '../models';
 
-class ProgressoService extends CrudService<IProgressoAula> {
+/**
+ * Progresso_Aulas tem chave primária composta (usuário + aula), então as rotas
+ * pontuais da API recebem os dois identificadores. Para as telas, cada registro
+ * continua tendo um `id` único, montado pela classe base.
+ */
+class ProgressoService extends CrudCompostoService<IProgressoAula> {
   constructor() {
-    super('progressoAulas');
+    super('progresso-aulas', 'idUsuario', 'idAula');
   }
 
   listarPorUsuario(idUsuario: string): Promise<IProgressoAula[]> {
@@ -11,9 +16,8 @@ class ProgressoService extends CrudService<IProgressoAula> {
   }
 
   /**
-   * Registra ou atualiza o progresso de uma aula. O par (idUsuario, idAula)
-   * funciona como chave composta, então um registro existente é atualizado
-   * em vez de duplicado.
+   * Registra ou atualiza o progresso de uma aula. Como o par (usuário, aula) é
+   * a chave, um registro existente é atualizado em vez de duplicado.
    */
   async registrar(
     idUsuario: string,
@@ -21,26 +25,24 @@ class ProgressoService extends CrudService<IProgressoAula> {
     status: StatusProgresso,
   ): Promise<IProgressoAula> {
     const existentes = await this.listar({ idUsuario, idAula });
-    const dados = {
-      idUsuario,
-      idAula,
-      status,
-      dataConclusao: new Date().toISOString(),
-    };
+    const dataConclusao = new Date().toISOString();
 
-    const registroAtual = existentes[0];
-    if (registroAtual?.id) {
-      return this.atualizar(registroAtual.id, dados);
+    if (existentes.length) {
+      return this.atualizar(`${idUsuario}-${idAula}`, {
+        status,
+        dataConclusao,
+      });
     }
-    return this.criar(dados);
+
+    return this.criar({ idUsuario, idAula, status, dataConclusao });
   }
 
   /** Remove a marcação de conclusão de uma aula. */
   async desmarcar(idUsuario: string, idAula: string): Promise<void> {
     const existentes = await this.listar({ idUsuario, idAula });
-    await Promise.all(
-      existentes.filter((p) => p.id).map((p) => this.excluir(p.id as string)),
-    );
+    if (existentes.length) {
+      await this.excluir(`${idUsuario}-${idAula}`);
+    }
   }
 }
 

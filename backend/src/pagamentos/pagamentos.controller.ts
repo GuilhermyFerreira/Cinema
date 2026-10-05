@@ -5,11 +5,18 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Query,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Papeis } from '../auth/papeis.decorator';
+import { PapeisGuard } from '../auth/papeis.guard';
+import {
+  UsuarioAtual,
+  type UsuarioAutenticado,
+} from '../auth/usuario-atual.decorator';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -23,7 +30,7 @@ import { UpdatePagamentoDto } from './dto/update-pagamento.dto';
 // Todas as rotas exigem token JWT.
 @ApiTags('pagamentos')
 @ApiBearerAuth('token')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PapeisGuard)
 @Controller('pagamentos')
 export class PagamentosController {
   constructor(private readonly pagamentosService: PagamentosService) {}
@@ -36,15 +43,18 @@ export class PagamentosController {
     description: 'Dados inválidos ou referência inexistente.',
   })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
-  create(@Body() createPagamentoDto: CreatePagamentoDto) {
-    return this.pagamentosService.create(createPagamentoDto);
+  create(
+    @Body() createPagamentoDto: CreatePagamentoDto,
+    @UsuarioAtual() atual: UsuarioAutenticado,
+  ) {
+    return this.pagamentosService.create(createPagamentoDto, atual);
   }
 
   @Get()
   @ApiOperation({ summary: 'Listar pagamentos' })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
-  findAll() {
-    return this.pagamentosService.findAll();
+  findAll(@Query() filtro: Record<string, string>) {
+    return this.pagamentosService.findAll(filtro);
   }
 
   @Get(':id')
@@ -54,6 +64,7 @@ export class PagamentosController {
     return this.pagamentosService.findOne(id);
   }
 
+  @Papeis('Admin')
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar um pagamento' })
   @ApiResponse({ status: 404, description: 'Pagamento não encontrado.' })
@@ -64,6 +75,7 @@ export class PagamentosController {
     return this.pagamentosService.update(id, updatePagamentoDto);
   }
 
+  @Papeis('Admin')
   @Delete(':id')
   @ApiOperation({ summary: 'Remover um pagamento' })
   @ApiResponse({ status: 404, description: 'Pagamento não encontrado.' })

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { montarWhere } from '../comum/filtros';
 import { CreateCursoDto } from './dto/create-curso.dto';
 import { UpdateCursoDto } from './dto/update-curso.dto';
 
@@ -11,8 +12,12 @@ export class CursosService {
     return this.prisma.curso.create({ data: createCursoDto });
   }
 
-  findAll() {
-    return this.prisma.curso.findMany({ orderBy: { idCurso: 'asc' } });
+  /** Campos aceitos como filtro: idInstrutor, idCategoria, nivel. */
+  findAll(filtro: Record<string, unknown> = {}) {
+    return this.prisma.curso.findMany({
+      where: montarWhere(filtro, ['idInstrutor', 'idCategoria'], ['nivel']),
+      orderBy: { idCurso: 'asc' },
+    });
   }
 
   async findOne(id: number) {

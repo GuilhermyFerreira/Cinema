@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { montarWhere } from '../comum/filtros';
 import { CreateTrilhaDto } from './dto/create-trilha.dto';
 import { UpdateTrilhaDto } from './dto/update-trilha.dto';
 
@@ -11,8 +12,12 @@ export class TrilhasService {
     return this.prisma.trilha.create({ data: createTrilhaDto });
   }
 
-  findAll() {
-    return this.prisma.trilha.findMany({ orderBy: { idTrilha: 'asc' } });
+  /** Campos aceitos como filtro: idCategoria. */
+  findAll(filtro: Record<string, unknown> = {}) {
+    return this.prisma.trilha.findMany({
+      where: montarWhere(filtro, ['idCategoria'], []),
+      orderBy: { idTrilha: 'asc' },
+    });
   }
 
   async findOne(id: number) {

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { montarWhere } from '../comum/filtros';
 import { CreateAssinaturaDto } from './dto/create-assinatura.dto';
 import { UpdateAssinaturaDto } from './dto/update-assinatura.dto';
 
@@ -11,8 +12,10 @@ export class AssinaturasService {
     return this.prisma.assinatura.create({ data: createAssinaturaDto });
   }
 
-  findAll() {
+  /** Campos aceitos como filtro: idUsuario, idPlano. */
+  findAll(filtro: Record<string, unknown> = {}) {
     return this.prisma.assinatura.findMany({
+      where: montarWhere(filtro, ['idUsuario', 'idPlano'], []),
       orderBy: { idAssinatura: 'asc' },
     });
   }

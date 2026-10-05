@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { montarWhere } from '../comum/filtros';
 import { CreatePlanoDto } from './dto/create-plano.dto';
 import { UpdatePlanoDto } from './dto/update-plano.dto';
 
@@ -11,8 +12,12 @@ export class PlanosService {
     return this.prisma.plano.create({ data: createPlanoDto });
   }
 
-  findAll() {
-    return this.prisma.plano.findMany({ orderBy: { preco: 'asc' } });
+  /** Campos aceitos como filtro: nome. */
+  findAll(filtro: Record<string, unknown> = {}) {
+    return this.prisma.plano.findMany({
+      where: montarWhere(filtro, [], ['nome']),
+      orderBy: { preco: 'asc' },
+    });
   }
 
   async findOne(id: number) {

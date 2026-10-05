@@ -14,6 +14,17 @@ generator client {
 }
 
 // ------------------------------------------------------------
+// Controle de acesso
+// ------------------------------------------------------------
+
+/// Admin administra o catálogo (cursos, módulos, aulas, trilhas, planos).
+/// Aluno apenas se matricula, acompanha o progresso e assina planos.
+enum Papel {
+  Admin
+  Aluno
+}
+
+// ------------------------------------------------------------
 // Core
 // ------------------------------------------------------------
 
@@ -23,6 +34,7 @@ model Usuario {
   email        String   @unique @map("Email")
   senhaHash    String   @map("SenhaHash")
   dataCadastro DateTime @default(now()) @map("DataCadastro")
+  papel        Papel    @default(Aluno) @map("Papel")
 
   cursosMinistrados Curso[]         @relation("InstrutorCursos")
   matriculas        Matricula[]

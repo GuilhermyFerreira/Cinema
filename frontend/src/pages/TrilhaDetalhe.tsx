@@ -16,6 +16,7 @@ import { Modal } from '../components/UI/Modal';
 import { Botao } from '../components/UI/Botao';
 import { CampoSelect } from '../components/Formulario/CampoSelect';
 import { CampoTexto } from '../components/Formulario/CampoTexto';
+import { useAutenticacao } from '../hooks/useAutenticacao';
 
 /**
  * Curadoria da trilha: gerencia a tabela associativa Trilhas_Cursos,
@@ -30,6 +31,7 @@ export function TrilhaDetalhe() {
   const [cursos, setCursos] = useState<ICurso[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  const { ehAdmin } = useAutenticacao();
 
   const [modalAberto, setModalAberto] = useState(false);
   const [formVinculo, setFormVinculo] = useState({ idCurso: '', ordem: '1' });
@@ -162,12 +164,14 @@ export function TrilhaDetalhe() {
             <Link to="/trilhas" className="btn btn-outline-secondary">
               <i className="bi bi-arrow-left me-2"></i>Voltar
             </Link>
-            <Link
-              to={`/trilhas/editar/${trilha.id}`}
-              className="btn btn-outline-primary"
-            >
-              <i className="bi bi-pencil me-2"></i>Editar
-            </Link>
+            {ehAdmin && (
+              <Link
+                to={`/trilhas/editar/${trilha.id}`}
+                className="btn btn-outline-primary"
+              >
+                <i className="bi bi-pencil me-2"></i>Editar
+              </Link>
+            )}
           </>
         }
       />
@@ -190,9 +194,15 @@ export function TrilhaDetalhe() {
 
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h4 className="mb-0">Sequência de cursos</h4>
-        <Botao icone="bi-plus-lg" onClick={abrirModal} disabled={!disponiveis.length}>
-          Adicionar curso
-        </Botao>
+        {ehAdmin && (
+          <Botao
+            icone="bi-plus-lg"
+            onClick={abrirModal}
+            disabled={!disponiveis.length}
+          >
+            Adicionar curso
+          </Botao>
+        )}
       </div>
 
       {vinculos.length === 0 ? (
@@ -200,9 +210,11 @@ export function TrilhaDetalhe() {
           mensagem="Esta trilha ainda não possui cursos."
           icone="bi-journal-x"
           acao={
-            <Botao icone="bi-plus-lg" onClick={abrirModal}>
-              Adicionar o primeiro curso
-            </Botao>
+            ehAdmin ? (
+              <Botao icone="bi-plus-lg" onClick={abrirModal}>
+                Adicionar o primeiro curso
+              </Botao>
+            ) : undefined
           }
         />
       ) : (
@@ -232,24 +244,28 @@ export function TrilhaDetalhe() {
                 </div>
 
                 <div className="d-flex gap-2">
-                  <Botao
-                    variante="outline-secondary"
-                    tamanho="sm"
-                    icone="bi-arrow-up"
-                    disabled={indice === 0}
-                    onClick={() => mover(indice, -1)}
-                  >
-                    {''}
-                  </Botao>
-                  <Botao
-                    variante="outline-secondary"
-                    tamanho="sm"
-                    icone="bi-arrow-down"
-                    disabled={indice === vinculos.length - 1}
-                    onClick={() => mover(indice, 1)}
-                  >
-                    {''}
-                  </Botao>
+                  {ehAdmin && (
+                    <>
+                      <Botao
+                        variante="outline-secondary"
+                        tamanho="sm"
+                        icone="bi-arrow-up"
+                        disabled={indice === 0}
+                        onClick={() => mover(indice, -1)}
+                      >
+                        {''}
+                      </Botao>
+                      <Botao
+                        variante="outline-secondary"
+                        tamanho="sm"
+                        icone="bi-arrow-down"
+                        disabled={indice === vinculos.length - 1}
+                        onClick={() => mover(indice, 1)}
+                      >
+                        {''}
+                      </Botao>
+                    </>
+                  )}
                   {curso && (
                     <Link
                       to={`/cursos/${curso.id}`}
@@ -258,14 +274,16 @@ export function TrilhaDetalhe() {
                       <i className="bi bi-eye"></i>
                     </Link>
                   )}
-                  <Botao
-                    variante="outline-danger"
-                    tamanho="sm"
-                    icone="bi-x-lg"
-                    onClick={() => removerCurso(vinculo)}
-                  >
-                    {''}
-                  </Botao>
+                  {ehAdmin && (
+                    <Botao
+                      variante="outline-danger"
+                      tamanho="sm"
+                      icone="bi-x-lg"
+                      onClick={() => removerCurso(vinculo)}
+                    >
+                      {''}
+                    </Botao>
+                  )}
                 </div>
               </div>
             );

@@ -3,11 +3,16 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import { LoginDto } from './dto/login.dto';
+import type { Papel } from '../generated/prisma/enums';
 
-/** Conteúdo "útil" carregado dentro do token. */
+/**
+ * Conteúdo "útil" carregado dentro do token. O papel viaja junto para que o
+ * PapeisGuard decida sem precisar consultar o banco a cada requisição.
+ */
 export interface JwtPayload {
   sub: number;
   email: string;
+  papel: Papel;
 }
 
 @Injectable()
@@ -35,6 +40,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: usuario.idUsuario,
       email: usuario.email,
+      papel: usuario.papel,
     };
 
     return {
@@ -43,6 +49,7 @@ export class AuthService {
         idUsuario: usuario.idUsuario,
         nomeCompleto: usuario.nomeCompleto,
         email: usuario.email,
+        papel: usuario.papel,
       },
     };
   }

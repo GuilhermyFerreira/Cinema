@@ -3,7 +3,7 @@ import type { IAula } from '../models';
 
 class AulaService extends CrudService<IAula> {
   constructor() {
-    super('aulas');
+    super('aulas', 'idAula');
   }
 
   /** Aulas de um módulo já ordenadas pelo campo Ordem. */

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usuarioService } from '../services';
-import type { IUsuario, PerfilUsuario } from '../models';
-import { PERFIS } from '../models';
+import type { IUsuario, Papel } from '../models';
+import { PAPEIS } from '../models';
 import { Cabecalho } from '../components/UI/Cabecalho';
 import { Carregando } from '../components/UI/Carregando';
 import { EstadoVazio } from '../components/UI/EstadoVazio';
@@ -16,7 +16,7 @@ import { formatarData } from '../utils/formatadores';
 export function Usuarios() {
   const [usuarios, setUsuarios] = useState<IUsuario[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [filtroPerfil, setFiltroPerfil] = useState<PerfilUsuario | 'Todos'>('Todos');
+  const [filtroPapel, setFiltroPapel] = useState<Papel | 'Todos'>('Todos');
   const [busca, setBusca] = useState('');
   const [paraExcluir, setParaExcluir] = useState<IUsuario | null>(null);
 
@@ -47,14 +47,14 @@ export function Usuarios() {
   }
 
   const filtrados = usuarios.filter((usuario) => {
-    const combinaPerfil =
-      filtroPerfil === 'Todos' || usuario.perfil === filtroPerfil;
+    const combinaPapel =
+      filtroPapel === 'Todos' || usuario.papel === filtroPapel;
     const termo = busca.trim().toLowerCase();
     const combinaBusca =
       !termo ||
       usuario.nomeCompleto.toLowerCase().includes(termo) ||
       usuario.email.toLowerCase().includes(termo);
-    return combinaPerfil && combinaBusca;
+    return combinaPapel && combinaBusca;
   });
 
   if (carregando) return <Carregando />;
@@ -87,16 +87,16 @@ export function Usuarios() {
         <div className="col-md-4">
           <select
             className="form-select"
-            value={filtroPerfil}
+            value={filtroPapel}
             onChange={(evento) =>
-              setFiltroPerfil(evento.target.value as PerfilUsuario | 'Todos')
+              setFiltroPapel(evento.target.value as Papel | 'Todos')
             }
-            aria-label="Filtrar por perfil"
+            aria-label="Filtrar por papel"
           >
-            <option value="Todos">Todos os perfis</option>
-            {PERFIS.map((perfil) => (
-              <option key={perfil} value={perfil}>
-                {perfil}
+            <option value="Todos">Todos os papéis</option>
+            {PAPEIS.map((papel) => (
+              <option key={papel} value={papel}>
+                {papel}
               </option>
             ))}
           </select>
@@ -115,18 +115,18 @@ export function Usuarios() {
         />
       ) : (
         <div className="card shadow-sm">
-          <Tabela colunas={['Nome completo', 'E-mail', 'Perfil', 'Cadastro', 'Ações']}>
+          <Tabela colunas={['Nome completo', 'E-mail', 'Papel', 'Cadastro', 'Ações']}>
             {filtrados.map((usuario) => (
               <tr key={usuario.id}>
                 <td className="fw-semibold">{usuario.nomeCompleto}</td>
                 <td className="text-body-secondary">{usuario.email}</td>
                 <td>
                   <Selo
-                    texto={usuario.perfil}
-                    cor={usuario.perfil === 'Instrutor' ? 'primary' : 'secondary'}
+                    texto={usuario.papel}
+                    cor={usuario.papel === 'Admin' ? 'primary' : 'secondary'}
                     icone={
-                      usuario.perfil === 'Instrutor'
-                        ? 'bi-person-video3'
+                      usuario.papel === 'Admin'
+                        ? 'bi-shield-lock'
                         : 'bi-person'
                     }
                   />

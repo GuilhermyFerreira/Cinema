@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   usuarioService,
@@ -9,19 +9,23 @@ import {
   certificadoService,
   assinaturaService,
   pagamentoService,
+  planoService,
 } from '../services';
 import { Carregando } from '../components/UI/Carregando';
 import { formatarMoeda } from '../utils/formatadores';
+import { useAutenticacao } from '../hooks/useAutenticacao';
 
 interface Indicadores {
-  usuarios: number;
   cursos: number;
   categorias: number;
   trilhas: number;
-  matriculas: number;
-  certificados: number;
-  assinaturas: number;
-  faturamento: number;
+  planos: number;
+  /** Só são carregados quando há sessão: a API protege essas coleções. */
+  usuarios?: number;
+  matriculas?: number;
+  certificados?: number;
+  assinaturas?: number;
+  faturamento?: number;
 }
 
 interface AtalhoModulo {
@@ -61,40 +65,45 @@ const MODULOS: AtalhoModulo[] = [
 
 /** Painel inicial com os indicadores gerais e os atalhos dos três módulos. */
 export function Home() {
+  const { autenticado } = useAutenticacao();
   const [indicadores, setIndicadores] = useState<Indicadores | null>(null);
   const [carregando, setCarregando] = useState(true);
 
-  useEffect(() => {
-    carregarIndicadores();
-  }, []);
-
-  async function carregarIndicadores() {
+  const carregarIndicadores = useCallback(async () => {
     try {
-      const [
-        usuarios,
-        cursos,
-        categorias,
-        trilhas,
-        matriculas,
-        certificados,
-        assinaturas,
-        faturamento,
-      ] = await Promise.all([
-        usuarioService.listar(),
+      // O catálogo é público; o restante exige sessão, então só é buscado
+      // quando há usuário logado — caso contrário a API responderia 401.
+      const [cursos, categorias, trilhas, planos] = await Promise.all([
         cursoService.listar(),
         categoriaService.listar(),
         trilhaService.listar(),
-        matriculaService.listar(),
-        certificadoService.listar(),
-        assinaturaService.listar(),
-        pagamentoService.totalFaturado(),
+        planoService.listar(),
       ]);
 
-      setIndicadores({
-        usuarios: usuarios.length,
+      const base: Indicadores = {
         cursos: cursos.length,
         categorias: categorias.length,
         trilhas: trilhas.length,
+        planos: planos.length,
+      };
+
+      if (!autenticado) {
+        setIndicadores(base);
+        return;
+      }
+
+      const [usuarios, matriculas, certificados, assinaturas, faturamento] =
+        await Promise.all([
+          usuarioService.listar(),
+          matriculaService.listar(),
+          certificadoService.listar(),
+          assinaturaService.listar(),
+          pagamentoService.totalFaturado(),
+        ]);
+
+      setIndicadores({
+        ...base,
+        usuarios: usuarios.length,
         matriculas: matriculas.length,
         certificados: certificados.length,
         assinaturas: assinaturas.length,
@@ -105,7 +114,12 @@ export function Home() {
     } finally {
       setCarregando(false);
     }
-  }
+  }, [autenticado]);
+
+  // Ao entrar ou sair, os indicadores protegidos entram ou somem.
+  useEffect(() => {
+    carregarIndicadores();
+  }, [carregarIndicadores]);
 
   return (
     <div>
@@ -139,13 +153,15 @@ export function Home() {
         <section className="mb-5">
           <h4 className="mb-3">Visão geral</h4>
           <div className="row row-cols-2 row-cols-md-4 g-3">
-            <Indicador
-              rotulo="Usuários"
-              valor={indicadores.usuarios}
-              icone="bi-people-fill"
-              cor="primary"
-              link="/usuarios"
-            />
+            {indicadores.usuarios !== undefined && (
+              <Indicador
+                rotulo="Usuários"
+                valor={indicadores.usuarios}
+                icone="bi-people-fill"
+                cor="primary"
+                link="/usuarios"
+              />
+            )}
             <Indicador
               rotulo="Cursos"
               valor={indicadores.cursos}
@@ -168,33 +184,48 @@ export function Home() {
               link="/trilhas"
             />
             <Indicador
-              rotulo="Matrículas"
-              valor={indicadores.matriculas}
-              icone="bi-card-checklist"
-              cor="success"
-              link="/matriculas"
+              rotulo="Planos"
+              valor={indicadores.planos}
+              icone="bi-box-seam"
+              cor="info"
+              link="/planos"
             />
-            <Indicador
-              rotulo="Certificados"
-              valor={indicadores.certificados}
-              icone="bi-patch-check-fill"
-              cor="success"
-              link="/certificados"
-            />
-            <Indicador
-              rotulo="Assinaturas"
-              valor={indicadores.assinaturas}
-              icone="bi-arrow-repeat"
-              cor="warning"
-              link="/assinaturas"
-            />
-            <Indicador
-              rotulo="Faturamento"
-              valor={formatarMoeda(indicadores.faturamento)}
-              icone="bi-cash-coin"
-              cor="warning"
-              link="/pagamentos"
-            />
+            {indicadores.matriculas !== undefined && (
+              <Indicador
+                rotulo="Matrículas"
+                valor={indicadores.matriculas}
+                icone="bi-card-checklist"
+                cor="success"
+                link="/matriculas"
+              />
+            )}
+            {indicadores.certificados !== undefined && (
+              <Indicador
+                rotulo="Certificados"
+                valor={indicadores.certificados}
+                icone="bi-patch-check-fill"
+                cor="success"
+                link="/certificados"
+              />
+            )}
+            {indicadores.assinaturas !== undefined && (
+              <Indicador
+                rotulo="Assinaturas"
+                valor={indicadores.assinaturas}
+                icone="bi-arrow-repeat"
+                cor="warning"
+                link="/assinaturas"
+              />
+            )}
+            {indicadores.faturamento !== undefined && (
+              <Indicador
+                rotulo="Faturamento"
+                valor={formatarMoeda(indicadores.faturamento)}
+                icone="bi-cash-coin"
+                cor="warning"
+                link="/pagamentos"
+              />
+            )}
           </div>
         </section>
       ) : null}

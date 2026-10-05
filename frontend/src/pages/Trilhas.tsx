@@ -8,6 +8,7 @@ import { EstadoVazio } from '../components/UI/EstadoVazio';
 import { Modal } from '../components/UI/Modal';
 import { Botao } from '../components/UI/Botao';
 import { CartaoTrilha } from '../components/Trilhas/CartaoTrilha';
+import { useAutenticacao } from '../hooks/useAutenticacao';
 
 /** Listagem das trilhas de conhecimento, com filtro por categoria. */
 export function Trilhas() {
@@ -17,6 +18,7 @@ export function Trilhas() {
   const [carregando, setCarregando] = useState(true);
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [paraExcluir, setParaExcluir] = useState<ITrilha | null>(null);
+  const { ehAdmin } = useAutenticacao();
 
   useEffect(() => {
     carregarDados();
@@ -76,8 +78,8 @@ export function Trilhas() {
         titulo="Trilhas de conhecimento"
         descricao="Sequências de cursos que formam um caminho de aprendizagem."
         icone="bi-signpost-split"
-        textoBotao="Nova trilha"
-        linkBotao="/trilhas/novo"
+        textoBotao={ehAdmin ? 'Nova trilha' : undefined}
+        linkBotao={ehAdmin ? '/trilhas/novo' : undefined}
       />
 
       <div className="row mb-4">
@@ -103,9 +105,11 @@ export function Trilhas() {
           mensagem="Nenhuma trilha cadastrada."
           icone="bi-signpost"
           acao={
-            <Link to="/trilhas/novo" className="btn btn-primary">
-              Criar a primeira trilha
-            </Link>
+            ehAdmin ? (
+              <Link to="/trilhas/novo" className="btn btn-primary">
+                Criar a primeira trilha
+              </Link>
+            ) : undefined
           }
         />
       ) : (
@@ -118,7 +122,7 @@ export function Trilhas() {
               totalCursos={
                 vinculos.filter((v) => v.idTrilha === trilha.id).length
               }
-              aoExcluir={() => setParaExcluir(trilha)}
+              aoExcluir={ehAdmin ? () => setParaExcluir(trilha) : undefined}
             />
           ))}
         </div>

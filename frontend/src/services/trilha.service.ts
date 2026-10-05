@@ -1,9 +1,9 @@
-import { CrudService } from './http.service';
+import { CrudService, CrudCompostoService } from './http.service';
 import type { ITrilha, ITrilhaCurso } from '../models';
 
 class TrilhaService extends CrudService<ITrilha> {
   constructor() {
-    super('trilhas');
+    super('trilhas', 'idTrilha');
   }
 
   listarPorCategoria(idCategoria: string): Promise<ITrilha[]> {
@@ -11,9 +11,10 @@ class TrilhaService extends CrudService<ITrilha> {
   }
 }
 
-class TrilhaCursoService extends CrudService<ITrilhaCurso> {
+class TrilhaCursoService extends CrudCompostoService<ITrilhaCurso> {
   constructor() {
-    super('trilhasCursos');
+    // Chave composta: a rota da API recebe /trilhas-cursos/:idTrilha/:idCurso
+    super('trilhas-cursos', 'idTrilha', 'idCurso');
   }
 
   /** Cursos de uma trilha já ordenados pelo campo Ordem. */

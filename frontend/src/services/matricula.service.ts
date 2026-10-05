@@ -3,7 +3,7 @@ import type { IMatricula } from '../models';
 
 class MatriculaService extends CrudService<IMatricula> {
   constructor() {
-    super('matriculas');
+    super('matriculas', 'idMatricula');
   }
 
   listarPorUsuario(idUsuario: string): Promise<IMatricula[]> {

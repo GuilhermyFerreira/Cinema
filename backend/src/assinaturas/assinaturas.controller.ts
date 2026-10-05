@@ -5,11 +5,18 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Query,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Papeis } from '../auth/papeis.decorator';
+import { PapeisGuard } from '../auth/papeis.guard';
+import {
+  UsuarioAtual,
+  type UsuarioAutenticado,
+} from '../auth/usuario-atual.decorator';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -23,7 +30,7 @@ import { UpdateAssinaturaDto } from './dto/update-assinatura.dto';
 // Todas as rotas exigem token JWT.
 @ApiTags('assinaturas')
 @ApiBearerAuth('token')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PapeisGuard)
 @Controller('assinaturas')
 export class AssinaturasController {
   constructor(private readonly assinaturasService: AssinaturasService) {}
@@ -36,15 +43,24 @@ export class AssinaturasController {
     description: 'Dados inválidos ou referência inexistente.',
   })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
-  create(@Body() createAssinaturaDto: CreateAssinaturaDto) {
-    return this.assinaturasService.create(createAssinaturaDto);
+  create(
+    @Body() createAssinaturaDto: CreateAssinaturaDto,
+    @UsuarioAtual() atual: UsuarioAutenticado,
+  ) {
+    // O aluno só cria registros para si mesmo; o Admin, para qualquer usuário.
+    const dados =
+      atual.papel === 'Admin'
+        ? createAssinaturaDto
+        : { ...createAssinaturaDto, idUsuario: atual.userId };
+
+    return this.assinaturasService.create(dados);
   }
 
   @Get()
   @ApiOperation({ summary: 'Listar assinaturas' })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
-  findAll() {
-    return this.assinaturasService.findAll();
+  findAll(@Query() filtro: Record<string, string>) {
+    return this.assinaturasService.findAll(filtro);
   }
 
   @Get(':id')
@@ -54,6 +70,7 @@ export class AssinaturasController {
     return this.assinaturasService.findOne(id);
   }
 
+  @Papeis('Admin')
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar uma assinatura' })
   @ApiResponse({ status: 404, description: 'Assinatura não encontrada.' })
@@ -64,6 +81,7 @@ export class AssinaturasController {
     return this.assinaturasService.update(id, updateAssinaturaDto);
   }
 
+  @Papeis('Admin')
   @Delete(':id')
   @ApiOperation({ summary: 'Remover uma assinatura' })
   @ApiResponse({ status: 404, description: 'Assinatura não encontrada.' })

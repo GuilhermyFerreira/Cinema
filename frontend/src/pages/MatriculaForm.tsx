@@ -33,7 +33,7 @@ export function MatriculaForm() {
     (async () => {
       try {
         const [listaAlunos, listaCursos] = await Promise.all([
-          usuarioService.listarPorPerfil('Aluno'),
+          usuarioService.listarPorPapel('Aluno'),
           cursoService.listar(),
         ]);
         setAlunos(listaAlunos);

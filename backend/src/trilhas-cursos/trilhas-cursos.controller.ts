@@ -5,11 +5,14 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Query,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Papeis } from '../auth/papeis.decorator';
+import { PapeisGuard } from '../auth/papeis.guard';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -20,14 +23,15 @@ import { TrilhasCursosService } from './trilhas-cursos.service';
 import { CreateTrilhaCursoDto } from './dto/create-trilha-curso.dto';
 import { UpdateTrilhaCursoDto } from './dto/update-trilha-curso.dto';
 
-// Todas as rotas exigem token JWT.
+// Leitura é pública (vitrine do site); criar, editar e remover exige Admin.
 @ApiTags('trilhas-cursos')
-@ApiBearerAuth('token')
-@UseGuards(AuthGuard('jwt'))
 @Controller('trilhas-cursos')
 export class TrilhasCursosController {
   constructor(private readonly trilhasCursosService: TrilhasCursosService) {}
 
+  @ApiBearerAuth('token')
+  @UseGuards(AuthGuard('jwt'), PapeisGuard)
+  @Papeis('Admin')
   @Post()
   @ApiOperation({ summary: 'Vincular um curso a uma trilha' })
   @ApiResponse({ status: 201, description: 'Curso vinculado com sucesso.' })
@@ -41,8 +45,8 @@ export class TrilhasCursosController {
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os vínculos entre trilhas e cursos' })
-  findAll() {
-    return this.trilhasCursosService.findAll();
+  findAll(@Query() filtro: Record<string, string>) {
+    return this.trilhasCursosService.findAll(filtro);
   }
 
   @Get(':idTrilha/:idCurso')
@@ -55,6 +59,9 @@ export class TrilhasCursosController {
     return this.trilhasCursosService.findOne(idTrilha, idCurso);
   }
 
+  @ApiBearerAuth('token')
+  @UseGuards(AuthGuard('jwt'), PapeisGuard)
+  @Papeis('Admin')
   @Patch(':idTrilha/:idCurso')
   @ApiOperation({ summary: 'Alterar a ordem do curso na trilha' })
   @ApiResponse({ status: 404, description: 'Vínculo não encontrado.' })
@@ -70,6 +77,9 @@ export class TrilhasCursosController {
     );
   }
 
+  @ApiBearerAuth('token')
+  @UseGuards(AuthGuard('jwt'), PapeisGuard)
+  @Papeis('Admin')
   @Delete(':idTrilha/:idCurso')
   @ApiOperation({ summary: 'Remover o curso da trilha' })
   @ApiResponse({ status: 404, description: 'Vínculo não encontrado.' })

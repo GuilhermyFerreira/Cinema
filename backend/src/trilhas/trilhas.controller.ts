@@ -5,11 +5,14 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Query,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Papeis } from '../auth/papeis.decorator';
+import { PapeisGuard } from '../auth/papeis.guard';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -20,14 +23,15 @@ import { TrilhasService } from './trilhas.service';
 import { CreateTrilhaDto } from './dto/create-trilha.dto';
 import { UpdateTrilhaDto } from './dto/update-trilha.dto';
 
-// Todas as rotas exigem token JWT.
+// Leitura é pública (vitrine do site); criar, editar e remover exige Admin.
 @ApiTags('trilhas')
-@ApiBearerAuth('token')
-@UseGuards(AuthGuard('jwt'))
 @Controller('trilhas')
 export class TrilhasController {
   constructor(private readonly trilhasService: TrilhasService) {}
 
+  @ApiBearerAuth('token')
+  @UseGuards(AuthGuard('jwt'), PapeisGuard)
+  @Papeis('Admin')
   @Post()
   @ApiOperation({ summary: 'Criar uma trilha' })
   @ApiResponse({ status: 201, description: 'Trilha criada com sucesso.' })
@@ -36,6 +40,7 @@ export class TrilhasController {
     description: 'Dados inválidos ou referência inexistente.',
   })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  @ApiResponse({ status: 403, description: 'Exige papel Admin.' })
   create(@Body() createTrilhaDto: CreateTrilhaDto) {
     return this.trilhasService.create(createTrilhaDto);
   }
@@ -43,8 +48,8 @@ export class TrilhasController {
   @Get()
   @ApiOperation({ summary: 'Listar trilhas' })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
-  findAll() {
-    return this.trilhasService.findAll();
+  findAll(@Query() filtro: Record<string, string>) {
+    return this.trilhasService.findAll(filtro);
   }
 
   @Get(':id')
@@ -54,6 +59,9 @@ export class TrilhasController {
     return this.trilhasService.findOne(id);
   }
 
+  @ApiBearerAuth('token')
+  @UseGuards(AuthGuard('jwt'), PapeisGuard)
+  @Papeis('Admin')
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar uma trilha' })
   @ApiResponse({ status: 404, description: 'Trilha não encontrada.' })
@@ -64,6 +72,9 @@ export class TrilhasController {
     return this.trilhasService.update(id, updateTrilhaDto);
   }
 
+  @ApiBearerAuth('token')
+  @UseGuards(AuthGuard('jwt'), PapeisGuard)
+  @Papeis('Admin')
   @Delete(':id')
   @ApiOperation({ summary: 'Remover uma trilha' })
   @ApiResponse({ status: 404, description: 'Trilha não encontrada.' })

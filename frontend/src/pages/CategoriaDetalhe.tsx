@@ -13,6 +13,7 @@ import { EstadoVazio } from '../components/UI/EstadoVazio';
 import { Alerta } from '../components/UI/Alerta';
 import { Selo } from '../components/UI/Selo';
 import { CartaoCurso } from '../components/Cursos/CartaoCurso';
+import { useAutenticacao } from '../hooks/useAutenticacao';
 
 /**
  * Visualiza a relação Categoria -> Cursos/Trilhas, atendendo ao requisito de
@@ -27,6 +28,7 @@ export function CategoriaDetalhe() {
   const [instrutores, setInstrutores] = useState<IUsuario[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  const { ehAdmin } = useAutenticacao();
 
   useEffect(() => {
     if (!id) return;
@@ -83,9 +85,11 @@ export function CategoriaDetalhe() {
           <h4 className="mb-0">
             Cursos da categoria <Selo texto={String(cursos.length)} cor="primary" />
           </h4>
-          <Link to="/cursos/novo" className="btn btn-sm btn-outline-primary">
-            <i className="bi bi-plus-lg me-1"></i>Novo curso
-          </Link>
+          {ehAdmin && (
+            <Link to="/cursos/novo" className="btn btn-sm btn-outline-primary">
+              <i className="bi bi-plus-lg me-1"></i>Novo curso
+            </Link>
+          )}
         </div>
 
         {cursos.length === 0 ? (

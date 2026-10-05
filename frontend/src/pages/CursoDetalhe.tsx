@@ -29,7 +29,9 @@ import { Estrelas } from '../components/UI/Estrelas';
 import { CampoTexto } from '../components/Formulario/CampoTexto';
 import { CampoSelect } from '../components/Formulario/CampoSelect';
 import { extrairErros } from '../utils/validacao';
-import { formatarData, formatarDuracao } from '../utils/formatadores';
+import { formatarData, formatarDuracao, hojeInputData } from '../utils/formatadores';
+import { useAutenticacao } from '../hooks/useAutenticacao';
+import { matriculaService } from '../services';
 
 const ICONE_TIPO = {
   'Vídeo': 'bi-play-circle',
@@ -52,6 +54,11 @@ const AULA_VAZIA = {
  */
 export function CursoDetalhe() {
   const { id } = useParams<{ id: string }>();
+  const { autenticado, ehAdmin, idLocal } = useAutenticacao();
+
+  // Matrícula do usuário logado neste curso (null = não matriculado).
+  const [matriculado, setMatriculado] = useState(false);
+  const [matriculando, setMatriculando] = useState(false);
 
   const [curso, setCurso] = useState<ICurso | null>(null);
   const [nomeCategoria, setNomeCategoria] = useState('');
@@ -109,6 +116,14 @@ export function CursoDetalhe() {
         setInstrutor(usuario);
         setAvaliacoes(listaAvaliacoes);
 
+        if (idLocal) {
+          const minhas = await matriculaService.listar({
+            idUsuario: idLocal,
+            idCurso: id,
+          });
+          setMatriculado(minhas.length > 0);
+        }
+
         await carregarConteudo();
       } catch (falha) {
         console.error('Erro ao carregar curso:', falha);
@@ -117,7 +132,33 @@ export function CursoDetalhe() {
         setCarregando(false);
       }
     })();
-  }, [id, carregarConteudo]);
+  }, [id, idLocal, carregarConteudo]);
+
+  /** Matricula o usuário logado neste curso. */
+  async function matricularSe() {
+    if (!id || !idLocal) return;
+
+    setMatriculando(true);
+    try {
+      if (await matriculaService.jaMatriculado(idLocal, id)) {
+        setMatriculado(true);
+        return;
+      }
+
+      await matriculaService.criar({
+        idUsuario: idLocal,
+        idCurso: id,
+        dataMatricula: hojeInputData(),
+        dataConclusao: null,
+      });
+      setMatriculado(true);
+    } catch (falha) {
+      console.error('Erro ao matricular:', falha);
+      setErro('Não foi possível concluir a matrícula.');
+    } finally {
+      setMatriculando(false);
+    }
+  }
 
   // ----- Módulos -------------------------------------------------------
 
@@ -251,12 +292,37 @@ export function CursoDetalhe() {
             <Link to="/cursos" className="btn btn-outline-secondary">
               <i className="bi bi-arrow-left me-2"></i>Voltar
             </Link>
-            <Link
-              to={`/cursos/editar/${curso.id}`}
-              className="btn btn-outline-primary"
-            >
-              <i className="bi bi-pencil me-2"></i>Editar
-            </Link>
+
+            {ehAdmin && (
+              <Link
+                to={`/cursos/editar/${curso.id}`}
+                className="btn btn-outline-primary"
+              >
+                <i className="bi bi-pencil me-2"></i>Editar
+              </Link>
+            )}
+
+            {/* O aluno se matricula aqui; o admin administra, não cursa. */}
+            {!ehAdmin &&
+              (matriculado ? (
+                <Link to="/meu-progresso" className="btn btn-success">
+                  <i className="bi bi-check-circle me-2"></i>Matriculado
+                </Link>
+              ) : autenticado ? (
+                <Botao
+                  variante="success"
+                  icone="bi-journal-plus"
+                  onClick={matricularSe}
+                  disabled={matriculando || !idLocal}
+                >
+                  {matriculando ? 'Matriculando...' : 'Matricular-se'}
+                </Botao>
+              ) : (
+                <Link to="/login" className="btn btn-success">
+                  <i className="bi bi-box-arrow-in-right me-2"></i>
+                  Entrar para se matricular
+                </Link>
+              ))}
           </>
         }
       />
@@ -328,9 +394,11 @@ export function CursoDetalhe() {
 
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h4 className="mb-0">Estrutura do curso</h4>
-        <Botao icone="bi-plus-lg" onClick={() => abrirModalModulo()}>
-          Adicionar módulo
-        </Botao>
+        {ehAdmin && (
+          <Botao icone="bi-plus-lg" onClick={() => abrirModalModulo()}>
+            Adicionar módulo
+          </Botao>
+        )}
       </div>
 
       {modulos.length === 0 ? (
@@ -338,9 +406,11 @@ export function CursoDetalhe() {
           mensagem="Este curso ainda não possui módulos."
           icone="bi-collection"
           acao={
-            <Botao icone="bi-plus-lg" onClick={() => abrirModalModulo()}>
-              Criar o primeiro módulo
-            </Botao>
+            ehAdmin ? (
+              <Botao icone="bi-plus-lg" onClick={() => abrirModalModulo()}>
+                Criar o primeiro módulo
+              </Botao>
+            ) : undefined
           }
         />
       ) : (
@@ -361,32 +431,34 @@ export function CursoDetalhe() {
                     </span>
                   </h5>
 
-                  <div className="d-flex gap-2">
-                    <Botao
-                      variante="outline-primary"
-                      tamanho="sm"
-                      icone="bi-plus-lg"
-                      onClick={() => abrirModalAula(modulo)}
-                    >
-                      Aula
-                    </Botao>
-                    <Botao
-                      variante="outline-secondary"
-                      tamanho="sm"
-                      icone="bi-pencil"
-                      onClick={() => abrirModalModulo(modulo)}
-                    >
-                      {''}
-                    </Botao>
-                    <Botao
-                      variante="outline-danger"
-                      tamanho="sm"
-                      icone="bi-trash"
-                      onClick={() => excluirModulo(modulo)}
-                    >
-                      {''}
-                    </Botao>
-                  </div>
+                  {ehAdmin && (
+                    <div className="d-flex gap-2">
+                      <Botao
+                        variante="outline-primary"
+                        tamanho="sm"
+                        icone="bi-plus-lg"
+                        onClick={() => abrirModalAula(modulo)}
+                      >
+                        Aula
+                      </Botao>
+                      <Botao
+                        variante="outline-secondary"
+                        tamanho="sm"
+                        icone="bi-pencil"
+                        onClick={() => abrirModalModulo(modulo)}
+                      >
+                        {''}
+                      </Botao>
+                      <Botao
+                        variante="outline-danger"
+                        tamanho="sm"
+                        icone="bi-trash"
+                        onClick={() => excluirModulo(modulo)}
+                      >
+                        {''}
+                      </Botao>
+                    </div>
+                  )}
                 </div>
 
                 {aulas.length === 0 ? (
@@ -428,22 +500,26 @@ export function CursoDetalhe() {
                           <span className="small text-body-secondary">
                             {formatarDuracao(aula.duracaoMinutos)}
                           </span>
-                          <Botao
-                            variante="outline-secondary"
-                            tamanho="sm"
-                            icone="bi-pencil"
-                            onClick={() => abrirModalAula(modulo, aula)}
-                          >
-                            {''}
-                          </Botao>
-                          <Botao
-                            variante="outline-danger"
-                            tamanho="sm"
-                            icone="bi-trash"
-                            onClick={() => excluirAula(aula)}
-                          >
-                            {''}
-                          </Botao>
+                          {ehAdmin && (
+                            <>
+                              <Botao
+                                variante="outline-secondary"
+                                tamanho="sm"
+                                icone="bi-pencil"
+                                onClick={() => abrirModalAula(modulo, aula)}
+                              >
+                                {''}
+                              </Botao>
+                              <Botao
+                                variante="outline-danger"
+                                tamanho="sm"
+                                icone="bi-trash"
+                                onClick={() => excluirAula(aula)}
+                              >
+                                {''}
+                              </Botao>
+                            </>
+                          )}
                         </div>
                       </li>
                     ))}

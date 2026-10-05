@@ -22,6 +22,7 @@ import { Botao } from '../components/UI/Botao';
 import { Selo } from '../components/UI/Selo';
 import { CartaoPlano } from '../components/Planos/CartaoPlano';
 import { CampoSelect } from '../components/Formulario/CampoSelect';
+import { useAutenticacao } from '../hooks/useAutenticacao';
 import {
   formatarMoeda,
   formatarData,
@@ -49,7 +50,10 @@ export function Checkout() {
 
   const [etapa, setEtapa] = useState(1);
   const [planoEscolhido, setPlanoEscolhido] = useState<IPlano | null>(null);
-  const [idUsuario, setIdUsuario] = useState('');
+  const { ehAdmin, idLocal } = useAutenticacao();
+
+  // O aluno assina para si mesmo; só o Admin escolhe o assinante.
+  const [idUsuario, setIdUsuario] = useState(ehAdmin ? '' : (idLocal ?? ''));
   const [metodo, setMetodo] = useState<MetodoPagamento>('Cartão de Crédito');
 
   const [processando, setProcessando] = useState(false);
@@ -210,6 +214,12 @@ export function Checkout() {
               <div className="card-body">
                 <h4 className="mb-3">2. Quem vai assinar?</h4>
 
+                {!ehAdmin && (
+                  <p className="text-body-secondary small">
+                    A assinatura será vinculada à sua conta.
+                  </p>
+                )}
+
                 <CampoSelect
                   label="Assinante"
                   name="idUsuario"
@@ -220,6 +230,7 @@ export function Checkout() {
                     value: usuario.id as string,
                   }))}
                   ajuda="A assinatura fica vinculada a este usuário."
+                  disabled={!ehAdmin}
                 />
 
                 <div className="d-flex gap-2 mt-4 pt-3 border-top">

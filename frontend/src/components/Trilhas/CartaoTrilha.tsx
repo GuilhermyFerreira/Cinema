@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { ITrilha } from '../../models';
 import { Selo } from '../UI/Selo';
+import { useAutenticacao } from '../../hooks/useAutenticacao';
 
 interface Props {
   trilha: ITrilha;
@@ -16,6 +17,8 @@ export function CartaoTrilha({
   totalCursos,
   aoExcluir,
 }: Props) {
+  const { ehAdmin } = useAutenticacao();
+
   return (
     <div className="col">
       <div className="card h-100 shadow-sm border-start border-4 border-primary">
@@ -43,22 +46,26 @@ export function CartaoTrilha({
             >
               <i className="bi bi-list-ol me-1"></i>Cursos da trilha
             </Link>
-            <Link
-              to={`/trilhas/editar/${trilha.id}`}
-              className="btn btn-outline-secondary btn-sm"
-              aria-label={`Editar ${trilha.titulo}`}
-            >
-              <i className="bi bi-pencil"></i>
-            </Link>
-            {aoExcluir && (
-              <button
-                type="button"
-                className="btn btn-outline-danger btn-sm"
-                aria-label={`Excluir ${trilha.titulo}`}
-                onClick={() => aoExcluir(trilha.id as string)}
-              >
-                <i className="bi bi-trash"></i>
-              </button>
+            {ehAdmin && (
+              <>
+                <Link
+                  to={`/trilhas/editar/${trilha.id}`}
+                  className="btn btn-outline-secondary btn-sm"
+                  aria-label={`Editar ${trilha.titulo}`}
+                >
+                  <i className="bi bi-pencil"></i>
+                </Link>
+                {aoExcluir && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger btn-sm"
+                    aria-label={`Excluir ${trilha.titulo}`}
+                    onClick={() => aoExcluir(trilha.id as string)}
+                  >
+                    <i className="bi bi-trash"></i>
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

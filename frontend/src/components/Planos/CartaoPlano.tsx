@@ -1,6 +1,7 @@
 import type { IPlano } from '../../models';
 import { formatarMoeda } from '../../utils/formatadores';
 import { Botao } from '../UI/Botao';
+import { useAutenticacao } from '../../hooks/useAutenticacao';
 
 interface Props {
   plano: IPlano;
@@ -20,6 +21,7 @@ export function CartaoPlano({
   aoSelecionar,
   acoes,
 }: Props) {
+  const { ehAdmin } = useAutenticacao();
   const mensal = plano.preco / plano.duracaoMeses;
 
   return (
@@ -57,7 +59,10 @@ export function CartaoPlano({
             </Botao>
           )}
 
-          {acoes && <div className="d-flex gap-2 mt-3">{acoes}</div>}
+          {/* `acoes` traz editar/excluir: só o Admin pode vê-las. */}
+          {ehAdmin && acoes && (
+            <div className="d-flex gap-2 mt-3">{acoes}</div>
+          )}
         </div>
       </div>
     </div>

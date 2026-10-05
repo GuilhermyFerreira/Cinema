@@ -3,7 +3,7 @@ import type { ICurso } from '../models';
 
 class CursoService extends CrudService<ICurso> {
   constructor() {
-    super('cursos');
+    super('cursos', 'idCurso');
   }
 
   /** Cursos de uma categoria específica (relação Categorias 1:N Cursos). */

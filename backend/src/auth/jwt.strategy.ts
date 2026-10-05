@@ -19,7 +19,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   // Se o token for válido, o NestJS anexa este retorno ao objeto da requisição (req.user)
-  validate({ sub, email }: JwtPayload) {
-    return { userId: sub, email };
+  validate({ sub, email, papel }: JwtPayload) {
+    return { userId: sub, email, papel };
   }
 }

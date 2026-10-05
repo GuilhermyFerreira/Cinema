@@ -9,6 +9,7 @@ import { Modal } from '../components/UI/Modal';
 import { Botao } from '../components/UI/Botao';
 import { Alerta } from '../components/UI/Alerta';
 import { CartaoPlano } from '../components/Planos/CartaoPlano';
+import { useAutenticacao } from '../hooks/useAutenticacao';
 
 /** Gestão dos planos de assinatura oferecidos pela plataforma. */
 export function Planos() {
@@ -17,6 +18,7 @@ export function Planos() {
   const [carregando, setCarregando] = useState(true);
   const [paraExcluir, setParaExcluir] = useState<IPlano | null>(null);
   const [aviso, setAviso] = useState('');
+  const { ehAdmin } = useAutenticacao();
 
   useEffect(() => {
     carregarDados();
@@ -76,8 +78,8 @@ export function Planos() {
         titulo="Planos"
         descricao="Ofertas de assinatura com preço e duração em meses."
         icone="bi-box-seam"
-        textoBotao="Novo plano"
-        linkBotao="/planos/novo"
+        textoBotao={ehAdmin ? 'Novo plano' : undefined}
+        linkBotao={ehAdmin ? '/planos/novo' : undefined}
       />
 
       {aviso && (

@@ -1,22 +1,26 @@
 import { z } from 'zod';
+import { PAPEIS, type Papel } from './auth.model';
 
 /**
- * Tabela: Usuarios
- * ID_Usuario (PK) | NomeCompleto | Email (Unique) | SenhaHash | DataCadastro
+ * Usuário tal como a API NestJS devolve.
+ *
+ * A senha nunca volta do servidor: ela só existe no sentido cliente → API, no
+ * cadastro e na troca de senha. No banco fica apenas o hash bcrypt.
  */
 export interface IUsuario {
   id?: string;
   nomeCompleto: string;
   email: string;
-  senhaHash: string;
-  dataCadastro: string;
-  /** Papel usado apenas na interface para separar alunos de instrutores. */
-  perfil: PerfilUsuario;
+  /** Texto puro, enviado só ao criar ou alterar; a API converte em hash. */
+  senha?: string;
+  dataCadastro?: string;
+  papel: Papel;
 }
 
-export const PERFIS = ['Aluno', 'Instrutor'] as const;
-export type PerfilUsuario = (typeof PERFIS)[number];
+export { PAPEIS };
+export type { Papel };
 
+/** Cadastro: a senha é obrigatória. */
 export const usuarioSchema = z.object({
   id: z.string().optional(),
   nomeCompleto: z
@@ -27,12 +31,17 @@ export const usuarioSchema = z.object({
     .string()
     .min(1, 'O e-mail é obrigatório')
     .email('Digite um e-mail válido'),
-  senhaHash: z
+  senha: z
     .string()
     .min(1, 'A senha é obrigatória')
     .min(6, 'A senha deve ter no mínimo 6 caracteres'),
-  dataCadastro: z
+});
+
+/** Edição: a senha é opcional — em branco, mantém a atual. */
+export const usuarioEdicaoSchema = usuarioSchema.extend({
+  senha: z
     .string()
-    .refine((valor) => !isNaN(Date.parse(valor)), 'Data de cadastro inválida'),
-  perfil: z.enum(PERFIS),
+    .min(6, 'A senha deve ter no mínimo 6 caracteres')
+    .optional()
+    .or(z.literal('')),
 });

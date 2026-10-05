@@ -3,7 +3,7 @@ import type { IModulo } from '../models';
 
 class ModuloService extends CrudService<IModulo> {
   constructor() {
-    super('modulos');
+    super('modulos', 'idModulo');
   }
 
   /** Módulos de um curso já ordenados pelo campo Ordem. */

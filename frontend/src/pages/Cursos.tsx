@@ -14,6 +14,7 @@ import { EstadoVazio } from '../components/UI/EstadoVazio';
 import { Modal } from '../components/UI/Modal';
 import { Botao } from '../components/UI/Botao';
 import { CartaoCurso } from '../components/Cursos/CartaoCurso';
+import { useAutenticacao } from '../hooks/useAutenticacao';
 
 /** Catálogo de cursos com filtros por categoria e nível. */
 export function Cursos() {
@@ -27,6 +28,7 @@ export function Cursos() {
   const [filtroNivel, setFiltroNivel] = useState('');
   const [busca, setBusca] = useState('');
   const [paraExcluir, setParaExcluir] = useState<ICurso | null>(null);
+  const { ehAdmin } = useAutenticacao();
 
   useEffect(() => {
     carregarDados();
@@ -105,8 +107,8 @@ export function Cursos() {
         titulo="Cursos"
         descricao="Catálogo completo, organizado por categoria e nível."
         icone="bi-journal-code"
-        textoBotao="Novo curso"
-        linkBotao="/cursos/novo"
+        textoBotao={ehAdmin ? 'Novo curso' : undefined}
+        linkBotao={ehAdmin ? '/cursos/novo' : undefined}
       />
 
       <div className="row g-3 mb-4">
@@ -161,9 +163,11 @@ export function Cursos() {
           mensagem="Nenhum curso encontrado com os filtros aplicados."
           icone="bi-journal-x"
           acao={
-            <Link to="/cursos/novo" className="btn btn-primary">
-              Cadastrar um curso
-            </Link>
+            ehAdmin ? (
+              <Link to="/cursos/novo" className="btn btn-primary">
+                Cadastrar um curso
+              </Link>
+            ) : undefined
           }
         />
       ) : (
@@ -175,7 +179,7 @@ export function Cursos() {
               nomeCategoria={nomeCategoria(curso.idCategoria)}
               nomeInstrutor={nomeInstrutor(curso.idInstrutor)}
               nota={mediaDoCurso(curso.id as string)}
-              aoExcluir={() => setParaExcluir(curso)}
+              aoExcluir={ehAdmin ? () => setParaExcluir(curso) : undefined}
             />
           ))}
         </div>

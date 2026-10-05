@@ -3,7 +3,7 @@ import type { ICertificado } from '../models';
 
 class CertificadoService extends CrudService<ICertificado> {
   constructor() {
-    super('certificados');
+    super('certificados', 'idCertificado');
   }
 
   listarPorUsuario(idUsuario: string): Promise<ICertificado[]> {

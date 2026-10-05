@@ -121,7 +121,7 @@ export function Matriculas() {
           >
             <option value="">Todos os alunos</option>
             {usuarios
-              .filter((usuario) => usuario.perfil === 'Aluno')
+              .filter((usuario) => usuario.papel === 'Aluno')
               .map((usuario) => (
                 <option key={usuario.id} value={usuario.id}>
                   {usuario.nomeCompleto}

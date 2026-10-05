@@ -302,7 +302,7 @@ export function Certificados() {
               }))
             }
             opcoes={usuarios
-              .filter((usuario) => usuario.perfil === 'Aluno')
+              .filter((usuario) => usuario.papel === 'Aluno')
               .map((aluno) => ({
                 label: aluno.nomeCompleto,
                 value: aluno.id as string,

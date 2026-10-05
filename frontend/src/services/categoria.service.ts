@@ -3,7 +3,7 @@ import type { ICategoria } from '../models';
 
 class CategoriaService extends CrudService<ICategoria> {
   constructor() {
-    super('categorias');
+    super('categorias', 'idCategoria');
   }
 
   /** Verifica se o nome já está em uso por outra categoria (campo Unique). */

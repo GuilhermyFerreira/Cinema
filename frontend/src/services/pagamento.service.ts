@@ -3,7 +3,7 @@ import type { IPagamento } from '../models';
 
 class PagamentoService extends CrudService<IPagamento> {
   constructor() {
-    super('pagamentos');
+    super('pagamentos', 'idPagamento');
   }
 
   listarPorAssinatura(idAssinatura: string): Promise<IPagamento[]> {

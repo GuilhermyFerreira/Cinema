@@ -1,15 +1,22 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Delete,
   Get,
   Param,
   ParseIntPipe,
+  Query,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { PapeisGuard } from '../auth/papeis.guard';
+import {
+  UsuarioAtual,
+  type UsuarioAutenticado,
+} from '../auth/usuario-atual.decorator';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -23,10 +30,22 @@ import { UpdateProgressoAulaDto } from './dto/update-progresso-aula.dto';
 // Todas as rotas exigem token JWT.
 @ApiTags('progresso-aulas')
 @ApiBearerAuth('token')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PapeisGuard)
 @Controller('progresso-aulas')
 export class ProgressoAulasController {
   constructor(private readonly progressoAulasService: ProgressoAulasService) {}
+
+  /**
+   * O aluno só enxerga e altera o próprio progresso; o Admin, o de qualquer um.
+   * Como o idUsuario faz parte da rota, basta compará-lo com o do token.
+   */
+  private exigirDono(idUsuario: number, atual: UsuarioAutenticado): void {
+    if (atual.papel !== 'Admin' && idUsuario !== atual.userId) {
+      throw new ForbiddenException(
+        'Você só pode acessar o seu próprio progresso',
+      );
+    }
+  }
 
   @Post()
   @ApiOperation({ summary: 'Registrar o progresso de um aluno em uma aula' })
@@ -38,14 +57,23 @@ export class ProgressoAulasController {
     status: 409,
     description: 'Já existe progresso para este aluno nesta aula.',
   })
-  create(@Body() createProgressoAulaDto: CreateProgressoAulaDto) {
-    return this.progressoAulasService.create(createProgressoAulaDto);
+  create(
+    @Body() createProgressoAulaDto: CreateProgressoAulaDto,
+    @UsuarioAtual() atual: UsuarioAutenticado,
+  ) {
+    // O aluno registra progresso apenas para si mesmo.
+    const dados =
+      atual.papel === 'Admin'
+        ? createProgressoAulaDto
+        : { ...createProgressoAulaDto, idUsuario: atual.userId };
+
+    return this.progressoAulasService.create(dados);
   }
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os registros de progresso' })
-  findAll() {
-    return this.progressoAulasService.findAll();
+  findAll(@Query() filtro: Record<string, string>) {
+    return this.progressoAulasService.findAll(filtro);
   }
 
   @Get(':idUsuario/:idAula')
@@ -54,7 +82,9 @@ export class ProgressoAulasController {
   findOne(
     @Param('idUsuario', ParseIntPipe) idUsuario: number,
     @Param('idAula', ParseIntPipe) idAula: number,
+    @UsuarioAtual() atual: UsuarioAutenticado,
   ) {
+    this.exigirDono(idUsuario, atual);
     return this.progressoAulasService.findOne(idUsuario, idAula);
   }
 
@@ -65,7 +95,10 @@ export class ProgressoAulasController {
     @Param('idUsuario', ParseIntPipe) idUsuario: number,
     @Param('idAula', ParseIntPipe) idAula: number,
     @Body() updateProgressoAulaDto: UpdateProgressoAulaDto,
+    @UsuarioAtual() atual: UsuarioAutenticado,
   ) {
+    this.exigirDono(idUsuario, atual);
+
     return this.progressoAulasService.update(
       idUsuario,
       idAula,
@@ -79,7 +112,9 @@ export class ProgressoAulasController {
   remove(
     @Param('idUsuario', ParseIntPipe) idUsuario: number,
     @Param('idAula', ParseIntPipe) idAula: number,
+    @UsuarioAtual() atual: UsuarioAutenticado,
   ) {
+    this.exigirDono(idUsuario, atual);
     return this.progressoAulasService.remove(idUsuario, idAula);
   }
 }

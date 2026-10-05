@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt'; // Biblioteca para hash de senha
 import { PrismaService } from '../prisma/prisma.service';
+import { montarWhere } from '../comum/filtros';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
+import type { Papel } from '../generated/prisma/enums';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 
 /**
@@ -35,8 +37,12 @@ export class UsuariosService {
     return this.prisma.usuario.findUnique({ where: { email } });
   }
 
-  findAll() {
-    return this.prisma.usuario.findMany({ omit: OMITIR_SENHA });
+  /** Campos aceitos como filtro: email, papel. */
+  findAll(filtro: Record<string, unknown> = {}) {
+    return this.prisma.usuario.findMany({
+      where: montarWhere(filtro, [], ['email', 'papel']),
+      omit: OMITIR_SENHA,
+    });
   }
 
   async findOne(id: number) {
@@ -62,6 +68,17 @@ export class UsuariosService {
     return this.prisma.usuario.update({
       where: { idUsuario: id },
       data: { ...dados, ...(senhaHash ? { senhaHash } : {}) },
+      omit: OMITIR_SENHA,
+    });
+  }
+
+  /** Promove ou rebaixa um usuário. Só o Admin chega até aqui. */
+  async alterarPapel(id: number, papel: Papel) {
+    await this.findOne(id);
+
+    return this.prisma.usuario.update({
+      where: { idUsuario: id },
+      data: { papel },
       omit: OMITIR_SENHA,
     });
   }

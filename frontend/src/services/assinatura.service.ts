@@ -3,7 +3,7 @@ import type { IAssinatura } from '../models';
 
 class AssinaturaService extends CrudService<IAssinatura> {
   constructor() {
-    super('assinaturas');
+    super('assinaturas', 'idAssinatura');
   }
 
   listarPorUsuario(idUsuario: string): Promise<IAssinatura[]> {

@@ -42,7 +42,7 @@ export function CursoForm() {
       try {
         const [listaCategorias, listaInstrutores] = await Promise.all([
           categoriaService.listar(),
-          usuarioService.listarPorPerfil('Instrutor'),
+          usuarioService.listar(),
         ]);
         setCategorias(listaCategorias);
         setInstrutores(listaInstrutores);
@@ -120,8 +120,8 @@ export function CursoForm() {
 
       {instrutores.length === 0 && (
         <Alerta tipo="warning">
-          Nenhum usuário com perfil <strong>Instrutor</strong> foi cadastrado
-          ainda. Cadastre um instrutor antes de criar cursos.
+          Nenhum usuário cadastrado ainda. Todo curso precisa de um instrutor
+          responsável.
         </Alerta>
       )}
 

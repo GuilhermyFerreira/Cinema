@@ -52,7 +52,7 @@ export function Avaliacoes() {
     try {
       const [listaAvaliacoes, listaAlunos, listaCursos] = await Promise.all([
         avaliacaoService.listar(),
-        usuarioService.listarPorPerfil('Aluno'),
+        usuarioService.listarPorPapel('Aluno'),
         cursoService.listar(),
       ]);
 

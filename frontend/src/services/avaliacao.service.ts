@@ -3,7 +3,7 @@ import type { IAvaliacao } from '../models';
 
 class AvaliacaoService extends CrudService<IAvaliacao> {
   constructor() {
-    super('avaliacoes');
+    super('avaliacoes', 'idAvaliacao');
   }
 
   listarPorCurso(idCurso: string): Promise<IAvaliacao[]> {

@@ -1,7 +1,7 @@
 # EduPlus — Plataforma de Cursos Online
 
-Projeto do **LAB03**: interface funcional de uma plataforma de cursos online, construída
-com **React + TypeScript + Bootstrap 5**, consumindo uma API **JSON Server**.
+Plataforma de cursos online com **React + TypeScript + Bootstrap 5** no frontend e uma
+API **NestJS + Prisma + PostgreSQL** com autenticação **JWT** no backend.
 
 O sistema cobre o ciclo acadêmico e financeiro de alunos e instrutores: a hierarquia de
 conteúdo (**Cursos → Módulos → Aulas**), o progresso dos usuários, a curadoria de
@@ -11,34 +11,86 @@ conteúdo (**Cursos → Módulos → Aulas**), o progresso dos usuários, a cura
                       ┌──────────────────────────┐
   navegador ────────► │  Frontend React (5173)   │
                       └────────────┬─────────────┘
-                                   │ fetch
+                                   │ fetch + Bearer <token>
                                    ▼
                       ┌──────────────────────────┐
-                      │  JSON Server (4000)      │──► frontend/db.json
+                      │  API NestJS (3000)       │  JWT · papéis · bcrypt
+                      │  Swagger em /api         │
+                      └────────────┬─────────────┘
+                                   │ Prisma
+                                   ▼
+                      ┌──────────────────────────┐
+                      │  PostgreSQL (5432)       │
                       └──────────────────────────┘
 ```
+
+## Por que o site deixou de usar o JSON Server
+
+Numa versão anterior o site lia e gravava num **JSON Server**, e só o login falava com a
+API NestJS. Os papéis existiam, mas **a proteção era apenas cosmética**: esconder o botão
+de excluir não impedia nada, porque o JSON Server não conhece token nem papel. Bastava
+abrir `http://localhost:4000/cursos/1` com `DELETE` para apagar um curso sem estar logado.
+
+Testamos e confirmamos esse buraco:
+
+| Chamada | Resposta de antes |
+| --- | --- |
+| `DELETE` no JSON Server, **sem token** | `200` — apagava |
+| `DELETE` na API NestJS, com token de Aluno | `403` — bloqueava |
+
+Como as telas falavam com a porta errada, os `403` nunca entravam em cena. Por isso o
+frontend inteiro passou a consumir a API NestJS: agora **quem recusa é o servidor**, e
+esconder o botão virou conveniência de interface, não a trava.
+
+O preço dessa escolha é que o projeto deixa de cumprir ao pé da letra o critério
+"Consumo da API: JSON Server" do enunciado do LAB03. Foi uma decisão consciente: sem ela,
+o controle de acesso seria apenas aparência.
+
+> O arquivo `frontend/db.json` continua no repositório como **origem dos dados de
+> exemplo** — o script `npm run popular` o carrega no PostgreSQL. O site não o consome
+> mais.
 
 ---
 
 ## 1. Como rodar
 
-Instalar as dependências (só na primeira vez):
+Pré-requisito: **PostgreSQL** em `localhost:5432` com o banco `projetocinema`.
+
+**Backend** (primeira vez):
 
 ```bash
-cd frontend
+cd backend
 npm install
+cp .env.example .env         # preencha DATABASE_URL e JWT_SECRET
+npx prisma migrate deploy
+npx prisma generate
+npm run popular              # carrega os dados de exemplo
+npm run criar:admin -- "Seu Nome" admin@eduplus.com admin123
 ```
 
-Abrir **dois terminais**, os dois dentro de `frontend`:
+**Subir os dois serviços**, em terminais separados:
 
 ```bash
-npm run server   # terminal 1 — JSON Server em http://localhost:4000
-npm run dev      # terminal 2 — site em http://localhost:5173
+cd backend  && npm run start:dev   # API em http://localhost:3000/api (Swagger)
+cd frontend && npm install && npm run dev   # site em http://localhost:5173
 ```
 
 Acessar: **http://localhost:5173**
 
-A URL da API fica em `frontend/.env` (`VITE_API_URL=http://localhost:4000`).
+A URL da API fica em `frontend/.env`:
+
+```
+VITE_API_URL=http://localhost:3000
+```
+
+### Contas para teste
+
+| Papel | E-mail | Senha |
+| --- | --- | --- |
+| Admin | o que você criou com `criar:admin` | a que você escolheu |
+| Aluno | qualquer um dos usuários de exemplo | `senha123` |
+
+Também dá para criar uma conta em `/cadastro` — todo autocadastro entra como **Aluno**.
 
 ---
 
@@ -51,7 +103,8 @@ A URL da API fica em `frontend/.env` (`VITE_API_URL=http://localhost:4000`).
 | **TypeScript** | Tipagem completa: interfaces por entidade + schemas Zod de validação |
 | **React** | Componentes próprios construídos sobre as classes do Bootstrap (sem o JS do Bootstrap) |
 | **Roteamento** | `react-router-dom` centralizado em `src/routers/app.routers.tsx` |
-| **Consumo de API** | JSON Server, via camada de serviços em `src/services/` |
+| **Consumo de API** | API NestJS autenticada, via camada de serviços em `src/services/` |
+| **Autenticação** | Login JWT contra a API NestJS, sessão em Context e rotas protegidas |
 
 > Os componentes de Modal e de dropdown da Navbar são implementados em **React puro**
 > com as classes visuais do Bootstrap — a aplicação não carrega o bundle JavaScript do
@@ -63,22 +116,27 @@ A URL da API fica em `frontend/.env` (`VITE_API_URL=http://localhost:4000`).
 
 ```
 frontend/
-├── db.json                     # base do JSON Server (14 coleções, com dados de exemplo)
-├── .env                        # VITE_API_URL
+├── db.json                     # dados de exemplo; carregados no Postgres por `npm run popular`
+├── .env                        # VITE_API_URL + VITE_AUTH_API_URL
 └── src/
     ├── models/                 # entidades + validação (Zod) — 1 arquivo por tabela
     │   ├── usuario.model.ts        categoria.model.ts     curso.model.ts
     │   ├── modulo.model.ts         aula.model.ts          matricula.model.ts
     │   ├── progresso.model.ts      avaliacao.model.ts     trilha.model.ts
     │   ├── certificado.model.ts    plano.model.ts         assinatura.model.ts
-    │   └── pagamento.model.ts      index.ts
+    │   ├── pagamento.model.ts      index.ts
+    │   └── auth.model.ts           # sessão, login e cadastro (não tem tabela própria)
     │
     ├── services/               # consumo da API
     │   ├── http.service.ts         # request() genérico + classe CrudService reutilizável
+    │   ├── auth.service.ts         # login/cadastro JWT na API NestJS + sessão
     │   └── *.service.ts            # um serviço por entidade, com consultas específicas
     │
+    ├── contexts/               # autenticacao.context.ts + AutenticacaoProvider.tsx
+    ├── hooks/useAutenticacao.ts    # acesso à sessão atual
+    │
     ├── components/
-    │   ├── Layout/                 # Navbar (com dropdowns em React), Rodapé
+    │   ├── Layout/                 # Navbar (dropdowns em React), Rodapé, RotaProtegida
     │   ├── UI/                     # Botao, Cartao, Cabecalho, Modal, Tabela, Selo,
     │   │                           # Alerta, BarraProgresso, Estrelas, EstadoVazio, Carregando
     │   ├── Formulario/             # CampoTexto, CampoSelect, CampoNota
@@ -87,7 +145,7 @@ frontend/
     │   ├── Planos/                 # CartaoPlano
     │   └── Certificados/           # CertificadoVisual (documento imprimível)
     │
-    ├── pages/                  # 24 telas (listagens, formulários e fluxos)
+    ├── pages/                  # 26 telas (listagens, formulários, fluxos, login e cadastro)
     ├── routers/app.routers.tsx # todas as rotas da aplicação
     └── utils/                  # formatadores, geradores de código, extração de erros Zod
 ```
@@ -96,9 +154,14 @@ frontend/
 
 ## 4. Modelo de dados
 
-As 13 tabelas do estudo de caso viraram coleções do JSON Server. Como o JSON Server exige
-uma chave `id` simples, as **chaves compostas** (`Progresso_Aulas` e `Trilhas_Cursos`) são
-representadas por um `id` próprio, com a unicidade do par garantida na camada de serviço.
+As 13 tabelas do estudo de caso existem como tabelas reais no PostgreSQL, com chaves
+estrangeiras de verdade. As **chaves compostas** (`Progresso_Aulas` e `Trilhas_Cursos`)
+são compostas também no banco, e suas rotas recebem os dois identificadores.
+
+No frontend, a camada de serviços traduz entre os dois formatos: a API usa `idCurso`
+numérico, as telas usam `id` em texto. Isso manteve as 24 páginas intactas durante a
+migração. Para os dois recursos de chave composta, o `id` das telas é a junção das duas
+partes (`"3-7"`), desmontada na hora de montar a rota.
 
 | Grupo | Coleções |
 | --- | --- |
@@ -115,37 +178,65 @@ interface separe quem ministra cursos de quem se matricula neles.
 
 ## 5. Telas e rotas
 
+As rotas têm três níveis de acesso:
+
+| Nível | Quem alcança | O que inclui |
+| --- | --- | --- |
+| **Público** | qualquer visitante | início, catálogo de cursos, categorias, trilhas, planos, login e cadastro |
+| **Autenticado** | Admin e Aluno | Meus cursos, Meu progresso, Meus certificados, checkout |
+| **Admin** | só administradores | cadastro e edição de todo o catálogo, usuários, matrículas, avaliações, certificados, assinaturas e pagamentos |
+
+O aluno que tenta abrir uma rota de Admin vê uma tela de **Acesso restrito** — e, se
+forçar a chamada direto na API, recebe `403`.
+
+
+As rotas são divididas em **vitrine pública** e **áreas restritas**. As restritas ficam
+agrupadas sob `<RotaProtegida>` em `src/routers/app.routers.tsx`: sem sessão ativa, elas
+redirecionam para `/login` guardando o destino pretendido, para voltar a ele depois.
+
+| Rota | Tela |
+| --- | --- |
+| `/login` | Entrada com e-mail e senha (JWT da API NestJS) |
+| `/cadastro` | Autocadastro público; cria a conta e já autentica |
+
+Público: `/`, `/categorias`, `/categorias/:id`, `/cursos`, `/cursos/:id`, `/trilhas`,
+`/trilhas/:id`, `/planos`, `/login` e `/cadastro`. Todo o resto exige login — inclusive os
+formulários de criação e edição do catálogo (🔒 nas tabelas abaixo).
+
 ### Módulo A — Acadêmico e de Conteúdo
 
 | Rota | Tela |
 | --- | --- |
-| `/categorias` · `/categorias/novo` · `/categorias/editar/:id` | CRUD de categorias |
+| `/categorias` | Lista de categorias |
+| 🔒 `/categorias/novo` · `/categorias/editar/:id` | Cadastro de categorias |
 | `/categorias/:id` | **Cursos e trilhas de uma categoria específica** |
 | `/cursos` | Catálogo com busca e filtros por categoria e nível |
-| `/cursos/novo` · `/cursos/editar/:id` | Cadastro do curso |
+| 🔒 `/cursos/novo` · `/cursos/editar/:id` | Cadastro do curso |
 | `/cursos/:id` | **Estrutura do curso**: adiciona Módulos e Aulas respeitando a `Ordem` |
-| `/trilhas` · `/trilhas/novo` · `/trilhas/editar/:id` | CRUD de trilhas |
+| `/trilhas` | Lista de trilhas |
+| 🔒 `/trilhas/novo` · `/trilhas/editar/:id` | Cadastro de trilhas |
 | `/trilhas/:id` | Sequência de cursos da trilha, com reordenação |
 
 ### Módulo B — Usuário e Progresso
 
 | Rota | Tela |
 | --- | --- |
-| `/usuarios` · `/usuarios/novo` · `/usuarios/editar/:id` | Cadastro de alunos e instrutores |
-| `/matriculas` · `/matriculas/novo` | Matrícula em cursos, com conclusão |
-| `/progresso` | **Marca aulas como concluídas** e emite o certificado ao chegar a 100% |
-| `/avaliacoes` | Notas de 1 a 5 e comentários, cadastrados em modal |
-| `/certificados` | Emissão e **verificação por código** |
-| `/certificados/:id` | Certificado visual, pronto para impressão |
+| 🔒 `/usuarios` · `/usuarios/novo` · `/usuarios/editar/:id` | Cadastro de alunos e instrutores |
+| 🔒 `/matriculas` · `/matriculas/novo` | Matrícula em cursos, com conclusão |
+| 🔒 `/progresso` | **Marca aulas como concluídas** e emite o certificado ao chegar a 100% |
+| 🔒 `/avaliacoes` | Notas de 1 a 5 e comentários, cadastrados em modal |
+| 🔒 `/certificados` | Emissão e **verificação por código** |
+| 🔒 `/certificados/:id` | Certificado visual, pronto para impressão |
 
 ### Módulo C — Financeiro
 
 | Rota | Tela |
 | --- | --- |
-| `/planos` · `/planos/novo` · `/planos/editar/:id` | CRUD de planos |
-| `/checkout` | **Checkout em 4 etapas**: plano → assinante → pagamento → comprovante |
-| `/assinaturas` | Assinaturas com situação de vigência e total pago |
-| `/pagamentos` | Extrato com método e ID da transação |
+| `/planos` | Vitrine de planos |
+| 🔒 `/planos/novo` · `/planos/editar/:id` | Cadastro de planos |
+| 🔒 `/checkout` | **Checkout em 4 etapas**: plano → assinante → pagamento → comprovante |
+| 🔒 `/assinaturas` | Assinaturas com situação de vigência e total pago |
+| 🔒 `/pagamentos` | Extrato com método e ID da transação |
 
 ---
 
@@ -171,21 +262,57 @@ A página de certificados permite consultar um código e confirmar sua validade.
 calculada a partir da duração do plano) e o `Pagamento`, com método escolhido e
 `Id_Transacao_Gateway` gerado (`TRX-<timestamp>-<sufixo>`).
 
-**Integridade referencial.** Como o JSON Server não tem chaves estrangeiras, as regras são
-aplicadas na interface: categorias com cursos vinculados não podem ser excluídas, um aluno
-não é matriculado duas vezes no mesmo curso, e excluir uma trilha remove antes seus
-vínculos em `trilhasCursos`.
+**Autenticação.** O login é a única parte do site que fala com a API NestJS. O fluxo está
+em `services/auth.service.ts`:
+
+1. `POST /auth/login` com e-mail e senha. A API compara a senha com o hash **bcrypt** e
+   devolve `{ access_token, usuario }`.
+2. O token e o usuário vão para o `localStorage` (chaves `eduplus.token` e
+   `eduplus.usuario`), e o `AutenticacaoProvider` passa a sessão para a aplicação.
+3. O cadastro usa `POST /usuarios` — a única rota aberta da API além do login — e, como
+   ela devolve o usuário criado mas não um token, chama o login em seguida.
+
+O token é assinado com validade de **1 hora**. Antes de restaurar a sessão, o serviço lê o
+campo `exp` do próprio JWT e descarta um token já vencido, para não manter no navegador uma
+sessão que a API recusaria. Erros de rede são distinguidos de credenciais inválidas: um
+`fetch` que não chega ao servidor mostra um aviso pedindo para subir o backend, enquanto o
+`401` mostra "E-mail ou senha incorretos".
+
+**Sessão na interface.** A navbar troca o botão "Entrar" pelo nome do usuário com a ação
+"Sair", e esconde do visitante os menus que ele não pode abrir: o dropdown **Alunos**
+desaparece por inteiro e o **Financeiro** fica só com "Planos".
+
+**Integridade referencial.** Agora é o PostgreSQL que garante: apagar uma categoria com
+cursos vinculados devolve `400`, e um par (aluno, curso) duplicado em matrículas devolve
+`409`. A interface continua antecipando esses casos com mensagens claras, mas quem decide
+é o banco.
+
+**Controle de acesso.** O papel (`Admin` ou `Aluno`) viaja dentro do JWT. O site esconde o
+que o usuário não pode fazer e a API recusa de fato — os dois níveis existem, mas só o
+segundo é proteção. Todo autocadastro entra como `Aluno`: o papel fica fora do DTO de
+criação justamente para que ninguém se promova sozinho.
 
 ---
 
 ## 7. Scripts
 
+**frontend/**
+
 ```bash
 npm run dev      # servidor de desenvolvimento (Vite)
-npm run server   # API JSON Server na porta 4000
 npm run build    # typecheck (tsc -b) + build de produção
 npm run lint     # ESLint
 npm run preview  # pré-visualiza o build de produção
+```
+
+**backend/**
+
+```bash
+npm run start:dev    # API com recarga automática, em http://localhost:3000/api
+npm run build        # compila para dist/
+npm run lint         # ESLint
+npm run popular      # carrega frontend/db.json no PostgreSQL
+npm run criar:admin -- "Nome" email@exemplo.com senha   # cria ou promove um Admin
 ```
 
 ---
@@ -195,8 +322,13 @@ npm run preview  # pré-visualiza o build de produção
 O diretório `backend/` contém uma API **NestJS 11 + Prisma 7 + PostgreSQL** com
 autenticação **JWT**, documentada no Swagger.
 
-> O backend é independente do site: o LAB03 pede consumo de API via **JSON Server**, e é
-> isso que o frontend faz. A API NestJS é exercitada pelo Swagger.
+> O frontend consome esta API por inteiro. Dela vêm
+> apenas a **autenticação** (`/auth/login` e o cadastro em `/usuarios`); os demais 70 endpoints
+> são exercitados pelo Swagger.
+
+O frontend chama a API direto do navegador, o que exige **CORS** — já habilitado com
+`app.enableCors()` em `src/main.ts`. As rotas **não** usam prefixo: `/api` é só o endereço
+do Swagger, então o login fica em `http://localhost:3000/auth/login`.
 
 ### Como rodar
 

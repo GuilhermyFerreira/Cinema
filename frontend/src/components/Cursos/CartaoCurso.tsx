@@ -3,6 +3,7 @@ import type { ICurso } from '../../models';
 import { Selo } from '../UI/Selo';
 import { Estrelas } from '../UI/Estrelas';
 import { formatarData } from '../../utils/formatadores';
+import { useAutenticacao } from '../../hooks/useAutenticacao';
 
 interface Props {
   curso: ICurso;
@@ -26,6 +27,10 @@ export function CartaoCurso({
   nota,
   aoExcluir,
 }: Props) {
+  // O cartão consulta o papel por conta própria: assim nenhuma listagem que o
+  // use pode esquecer de esconder os controles de administração.
+  const { ehAdmin } = useAutenticacao();
+
   return (
     <div className="col">
       <div className="card h-100 shadow-sm">
@@ -72,22 +77,26 @@ export function CartaoCurso({
             >
               <i className="bi bi-eye me-1"></i>Conteúdo
             </Link>
-            <Link
-              to={`/cursos/editar/${curso.id}`}
-              className="btn btn-outline-secondary btn-sm"
-              aria-label={`Editar ${curso.titulo}`}
-            >
-              <i className="bi bi-pencil"></i>
-            </Link>
-            {aoExcluir && (
-              <button
-                type="button"
-                className="btn btn-outline-danger btn-sm"
-                aria-label={`Excluir ${curso.titulo}`}
-                onClick={() => aoExcluir(curso.id as string)}
-              >
-                <i className="bi bi-trash"></i>
-              </button>
+            {ehAdmin && (
+              <>
+                <Link
+                  to={`/cursos/editar/${curso.id}`}
+                  className="btn btn-outline-secondary btn-sm"
+                  aria-label={`Editar ${curso.titulo}`}
+                >
+                  <i className="bi bi-pencil"></i>
+                </Link>
+                {aoExcluir && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger btn-sm"
+                    aria-label={`Excluir ${curso.titulo}`}
+                    onClick={() => aoExcluir(curso.id as string)}
+                  >
+                    <i className="bi bi-trash"></i>
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

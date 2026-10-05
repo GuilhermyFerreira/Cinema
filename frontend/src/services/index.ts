@@ -12,3 +12,4 @@ export * from './certificado.service';
 export * from './plano.service';
 export * from './assinatura.service';
 export * from './pagamento.service';
+export * from './auth.service';
