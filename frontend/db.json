@@ -55,22 +55,6 @@
       "senhaHash": "senha123",
       "dataCadastro": "2026-04-05",
       "perfil": "Aluno"
-    },
-    {
-      "id": "8a33",
-      "nomeCompleto": "Guilhermy Ferreira",
-      "email": "admin@eduplus.com",
-      "senhaHash": "(autenticado pela API NestJS)",
-      "dataCadastro": "2026-10-05",
-      "perfil": "Instrutor"
-    },
-    {
-      "id": "e265",
-      "nomeCompleto": "Joao Pedro",
-      "email": "joaopedro@gmail.com",
-      "senhaHash": "(autenticado pela API NestJS)",
-      "dataCadastro": "2026-10-05",
-      "perfil": "Aluno"
     }
   ],
   "categorias": [
@@ -106,6 +90,17 @@
       "dataPublicacao": "2026-03-10",
       "totalAulas": 6,
       "totalHoras": 20
+    },
+    {
+      "id": "cur2",
+      "titulo": "APIs REST com Node.js",
+      "descricao": "Criação de APIs REST seguras e escaláveis, com autenticação, validação e documentação.",
+      "idInstrutor": "u2",
+      "idCategoria": "c1",
+      "nivel": "Intermediário",
+      "dataPublicacao": "2026-04-02",
+      "totalAulas": 4,
+      "totalHoras": 18
     },
     {
       "id": "cur3",
