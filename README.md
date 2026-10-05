@@ -455,3 +455,220 @@ inexistente quanto para senha errada, para não revelar quais e-mails estão cad
 3. **Login:** `POST /auth/login` com o mesmo e-mail e senha. Copie o `access_token`.
 4. **Autorizar:** clique em **Authorize** no topo, cole o token e confirme.
 5. **Acessar:** `GET /usuarios` agora responde 200. Sem o token, responde 401.
+
+---
+
+## 9. Referência de comandos
+
+Todos os comandos pressupõem que você está dentro de `backend/` ou `frontend/`, conforme
+indicado. O banco padrão é `projetocinema`, em `localhost:5432`.
+
+### 9.1 Instalação do zero
+
+Use esta sequência ao clonar o repositório pela primeira vez, ou depois de apagar o banco.
+
+```bash
+# 1. Criar o banco (só se ainda não existir)
+createdb -h localhost -U postgres projetocinema
+
+# 2. Backend
+cd backend
+npm install                  # instala as dependências
+cp .env.example .env         # cria o arquivo de ambiente (não vai para o Git)
+```
+
+Abra o `.env` e preencha as duas variáveis:
+
+```
+DATABASE_URL="postgresql://postgres:SUA_SENHA@localhost:5432/projetocinema?schema=public"
+JWT_SECRET="cole aqui uma chave longa e aleatória"
+```
+
+Gere a chave com:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+Sem `JWT_SECRET` a API **falha ao iniciar**, de propósito — para nunca cair numa chave
+padrão embutida no código.
+
+```bash
+# 3. Preparar o banco e os dados
+npx prisma migrate deploy    # cria as tabelas aplicando as migrations existentes
+npx prisma generate          # gera o Prisma Client a partir do schema
+npm run popular              # carrega os dados de exemplo (lê frontend/db.json)
+npm run criar:admin -- "Seu Nome" admin@eduplus.com admin123
+
+# 4. Frontend
+cd ../frontend
+npm install
+```
+
+### 9.2 Rodar a aplicação
+
+Dois terminais, um para cada serviço:
+
+```bash
+cd backend  && npm run start:dev   # API em http://localhost:3000 · Swagger em /api
+cd frontend && npm run dev         # site em http://localhost:5173
+```
+
+| Comando | O que faz |
+| --- | --- |
+| `npm run start:dev` | Sobe a API recompilando a cada alteração. É o modo de desenvolvimento. |
+| `npm run start:prod` | Roda a API já compilada (`dist/`). Exige um `npm run build` antes. |
+| `npm run dev` | Sobe o site com recarga automática (Vite). |
+| `npm run build` | Compila para produção. No frontend roda o typecheck antes. |
+| `npm run preview` | Serve o build de produção do site, para conferir antes de entregar. |
+
+### 9.3 Banco de dados
+
+| Comando | O que faz |
+| --- | --- |
+| `npx prisma migrate dev --name <nome>` | Depois de alterar `schema.prisma`: cria a migration, aplica e regenera o client. |
+| `npx prisma migrate deploy` | Aplica as migrations que ainda não rodaram, sem criar novas. Use ao clonar o projeto. |
+| `npx prisma migrate status` | Mostra quais migrations já foram aplicadas e se há pendências. |
+| `npx prisma generate` | Regenera o Prisma Client. Necessário sempre que o schema muda. |
+| `npx prisma studio` | Abre um navegador visual das tabelas em http://localhost:5555. |
+
+**Apagar e recomeçar.** Há dois níveis, do mais leve ao mais drástico:
+
+```bash
+# A) Zerar só os dados, mantendo as tabelas e recarregando o exemplo
+npx prisma migrate reset     # ATENÇÃO: apaga TODOS os dados e reaplica as migrations
+npm run popular              # recarrega os dados de exemplo
+npm run criar:admin -- "Seu Nome" admin@eduplus.com admin123
+```
+
+```bash
+# B) Destruir o banco inteiro e reconstruir do zero
+dropdb   -h localhost -U postgres projetocinema
+createdb -h localhost -U postgres projetocinema
+npx prisma migrate deploy
+npm run popular
+npm run criar:admin -- "Seu Nome" admin@eduplus.com admin123
+```
+
+> O `npm run popular` só carrega os dados se o banco estiver **sem cursos**. Se já houver,
+> ele avisa e não altera nada — assim rodá-lo duas vezes não duplica registros.
+
+**Inspecionar pelo terminal:**
+
+```bash
+# Listar usuários e seus papéis
+psql -h localhost -U postgres -d projetocinema -c \
+  'select "ID_Usuario", "Email", "Papel" from "Usuarios" order by 1;'
+
+# Contar registros de uma tabela
+psql -h localhost -U postgres -d projetocinema -c 'select count(*) from "Cursos";'
+
+# Promover alguém a Admin direto no banco (o normal é usar a API)
+# O heredoc evita brigar com as aspas: o SQL usa aspas duplas nos nomes das
+# colunas e aspas simples nos valores.
+psql -h localhost -U postgres -d projetocinema <<'SQL'
+update "Usuarios" set "Papel" = 'Admin' where "Email" = 'fulano@exemplo.com';
+SQL
+```
+
+### 9.4 Qualidade do código
+
+| Comando | Onde | O que faz |
+| --- | --- | --- |
+| `npm run lint` | ambos | Roda o ESLint. No backend já corrige o que é automático (`--fix`). |
+| `npm run build` | frontend | Roda `tsc -b` (typecheck) e só então empacota. Pega erro de tipo. |
+| `npm test` | backend | Testes unitários com Jest. |
+| `npm run test:cov` | backend | Testes com relatório de cobertura. |
+| `npm run format` | backend | Formata o código com Prettier. |
+
+### 9.5 Testar a API pelo terminal
+
+Com a API no ar, dá para verificar o controle de acesso sem abrir o navegador.
+
+**1. Entrar e guardar o token:**
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:3000/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@eduplus.com","senha":"admin123"}' \
+  | python3 -c 'import sys,json; print(json.load(sys.stdin)["access_token"])')
+```
+
+**2. Conferir o que é público (deve responder `200` sem token):**
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3000/cursos
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3000/planos
+```
+
+**3. Conferir o que é privado (deve responder `401` sem token):**
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3000/usuarios
+```
+
+**4. Repetir com o token (deve responder `200`):**
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' \
+  -H "Authorization: Bearer $TOKEN" http://localhost:3000/usuarios
+```
+
+**5. Confirmar que um Aluno é barrado (deve responder `403`):**
+
+```bash
+# Cria uma conta comum — todo autocadastro entra como Aluno
+curl -s -X POST http://localhost:3000/usuarios -H 'Content-Type: application/json' \
+  -d '{"nomeCompleto":"Teste Aluno","email":"teste@aluno.com","senha":"senha123"}'
+
+ALUNO=$(curl -s -X POST http://localhost:3000/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"teste@aluno.com","senha":"senha123"}' \
+  | python3 -c 'import sys,json; print(json.load(sys.stdin)["access_token"])')
+
+# Tentar criar um curso como Aluno → 403
+curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:3000/cursos \
+  -H "Authorization: Bearer $ALUNO" -H 'Content-Type: application/json' \
+  -d '{"titulo":"Curso Pirata","idInstrutor":1,"idCategoria":1}'
+
+# Tentar listar usuários como Aluno → 403
+curl -s -o /dev/null -w '%{http_code}\n' \
+  -H "Authorization: Bearer $ALUNO" http://localhost:3000/usuarios
+```
+
+**6. Ver o conteúdo do token** (o papel viaja dentro dele):
+
+```bash
+echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null | python3 -m json.tool
+```
+
+**Filtros por query**, usados pelas telas do aluno:
+
+```bash
+curl -s "http://localhost:3000/cursos?idCategoria=1"            # cursos de uma categoria
+curl -s "http://localhost:3000/modulos?idCurso=1"               # módulos de um curso
+curl -s -H "Authorization: Bearer $TOKEN" \
+     "http://localhost:3000/matriculas?idUsuario=1"             # matrículas de um aluno
+```
+
+### 9.6 Testar pela interface
+
+| O que verificar | Como |
+| --- | --- |
+| Visitante | Abra http://localhost:5173 sem entrar. O catálogo, as trilhas e os planos devem carregar; o menu mostra só "Acadêmico". |
+| Admin | Entre com a conta criada no `criar:admin`. Devem aparecer "Alunos" e "Financeiro", o selo **Admin** ao lado do nome, e os botões de editar/excluir nos cursos. |
+| Aluno | Crie uma conta em `/cadastro`. Só deve aparecer "Minha área"; os botões de administração somem. |
+| Bloqueio real | Logado como Aluno, digite `/usuarios` na barra de endereço: aparece **Acesso restrito**. Se chamar a API direto, recebe `403`. |
+| Matrícula | Como Aluno, abra um curso e clique em **Matricular-se**; ele passa a aparecer em "Meus cursos". |
+| Certificado | Em "Meu progresso", marque todas as aulas de um curso — o botão **Emitir certificado** é liberado. |
+
+### 9.7 Problemas comuns
+
+| Sintoma | Causa provável | Solução |
+| --- | --- | --- |
+| API não sobe: `JWT_SECRET não definida` | Falta a variável no `.env` | Gere a chave e preencha o `.env` (ver 9.1). |
+| Site carrega mas as listas vêm vazias | A API não está no ar | Suba o backend com `npm run start:dev`. |
+| Tudo responde `401` | Token expirado (dura 1 hora) | Saia e entre novamente no site. |
+| `Can't reach database server` | PostgreSQL parado | Inicie o serviço e confira a `DATABASE_URL`. |
+| Erro do Prisma sobre coluna inexistente | Client desatualizado após mudar o schema | `npx prisma migrate deploy && npx prisma generate`. |
+| `npm run popular` diz que não fez nada | O banco já tem cursos | É o comportamento esperado. Para recarregar, use `npx prisma migrate reset` antes. |
